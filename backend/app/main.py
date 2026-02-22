@@ -8,7 +8,10 @@ from .database import engine, Base
 from .models import *  # noqa: F401, F403
 
 # CORS 允许的来源（环境变量配置，逗号分隔；默认允许所有）
-_allowed_origins_str = os.environ.get("ALLOWED_ORIGINS", "*")
+_allowed_origins_str = os.environ.get(
+    "ALLOWED_ORIGINS",
+    "https://chenshi0504.github.io,http://localhost:5173"
+)
 ALLOWED_ORIGINS = (
     ["*"] if _allowed_origins_str == "*"
     else [o.strip() for o in _allowed_origins_str.split(",") if o.strip()]

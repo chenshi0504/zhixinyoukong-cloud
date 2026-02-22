@@ -1,0 +1,4 @@
+# file: D:\chenshi\智信优控_面向车路云一体化的综合交通实验平台\cloud\backend\app\models\user.py
+# hypothesis_version: 6.151.9
+
+[255, 'CASCADE', 'Organization', 'RefreshToken', 'Report', 'Report.grader_id', 'Report.student_id', 'Task', 'Task.teacher_id', 'User', 'all, delete-orphan', 'grader', 'org_id', 'organizations.id', 'refresh_tokens', 'student', 'teacher', 'uq_username_org', 'user', 'username', 'users', 'users.id']

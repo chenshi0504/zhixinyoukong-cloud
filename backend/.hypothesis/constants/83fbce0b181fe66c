@@ -1,0 +1,4 @@
+# file: D:\chenshi\智信优控_面向车路云一体化的综合交通实验平台\cloud\backend\app\routers\users.py
+# hypothesis_version: 6.151.9
+
+[403, 404, '/api/cloud/users', '/import', '/{user_id}', '123456', 'created', 'error', 'errors', 'org_admin', 'org_id', 'password', 'real_name', 'role', 'row', 'student', 'super_admin', 'username', 'utf-8-sig', '权限不足', '用户不存在', '用户管理']

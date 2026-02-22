@@ -1,0 +1,4 @@
+# file: D:\chenshi\智信优控_面向车路云一体化的综合交通实验平台\cloud\backend\app\routers\analytics.py
+# hypothesis_version: 6.151.9
+
+['/api/cloud/analytics', '/modules', '/overview', '/report', '/trends', 'active_users', 'experiment_count', 'last_active', 'super_admin', '未知', '统计分析']

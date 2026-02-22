@@ -1,0 +1,4 @@
+# file: D:\chenshi\智信优控_面向车路云一体化的综合交通实验平台\cloud\backend\app\routers\licenses.py
+# hypothesis_version: 6.151.9
+
+[400, 404, 409, '/activate', '/api/cloud/licenses', '/generate', '/verify', '/{license_id}/revoke', 'LICENSE_NOT_FOUND', 'LICENSE_REVOKED', 'License 不存在', 'License 已绑定其他机器', 'License 已被吊销', 'License 管理', 'error', 'super_admin', '激活失败']

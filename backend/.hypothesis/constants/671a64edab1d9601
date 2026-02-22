@@ -1,0 +1,4 @@
+# file: D:\chenshi\智信优控_面向车路云一体化的综合交通实验平台\cloud\backend\app\schemas\__init__.py
+# hypothesis_version: 6.151.9
+
+['AnalyticsRead', 'AnalyticsReport', 'GradeRequest', 'LicenseCreate', 'LicenseRead', 'LicenseVerifyRequest', 'LoginRequest', 'LoginResponse', 'ModulesResponse', 'OrgCreate', 'OrgDetail', 'OrgRead', 'OrgUpdate', 'OverviewResponse', 'PagedResponse', 'PasswordResetRequest', 'ReportRead', 'TaskCreate', 'TaskRead', 'TaskUpdate', 'TokenRefreshRequest', 'TokenRefreshResponse', 'TrendsResponse', 'UpdateCheckResponse', 'UpdateCreate', 'UpdateRead', 'UserCreate', 'UserRead', 'UserUpdate']

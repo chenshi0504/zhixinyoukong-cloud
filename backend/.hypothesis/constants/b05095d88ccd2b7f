@@ -1,0 +1,4 @@
+# file: D:\chenshi\智信优控_面向车路云一体化的综合交通实验平台\cloud\backend\app\models\report.py
+# hypothesis_version: 6.151.9
+
+[255, 500, 'Task', 'User', 'reports', 'reports_graded', 'reports_submitted', 'submitted', 'tasks.id', 'users.id']

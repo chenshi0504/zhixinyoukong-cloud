@@ -1,0 +1,4 @@
+# file: D:\chenshi\智信优控_面向车路云一体化的综合交通实验平台\cloud\backend\app\routers\reports.py
+# hypothesis_version: 6.151.9
+
+[404, '/api/cloud/reports', '/upload', '/{report_id}/grade', 'graded', 'org_admin', 'reports', 'status', 'super_admin', 'teacher', 'wb', '报告不存在', '报告管理', '文件不存在']

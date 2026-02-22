@@ -1,0 +1,4 @@
+# file: D:\chenshi\智信优控_面向车路云一体化的综合交通实验平台\cloud\backend\app\services\license.py
+# hypothesis_version: 6.151.9
+
+[180, '.', 'INVALID_TOKEN', 'LICENSE_EXPIRED', 'LICENSE_NOT_FOUND', 'LICENSE_REVOKED', 'activated_at', 'activation_token', 'education', 'error', 'expires_at', 'is_active', 'license_id', 'license_key', 'license_type', 'machine_id', 'org_id', 'trial']

@@ -119,8 +119,7 @@ docker compose up -d             # Nginx :80 → API :9000 → PostgreSQL
 │   └── vite.config.js       # Build config (GitHub Pages base path)
 ├── nginx/                   # Nginx reverse‑proxy config (Docker / self‑hosted)
 ├── deploy/                  # Deployment scripts & tools
-│   ├── start_cloud.bat      # Windows one‑click start (HTTP/HTTPS + tunnel)
-│   └── installer_cloud.iss  # Inno Setup installer script
+│   └── start_cloud.bat      # Windows one‑click start (HTTP/HTTPS + tunnel)
 ├── docs/                    # Design docs & deployment guide
 ├── docker-compose.yml       # Full‑stack: Nginx + API + PostgreSQL
 ├── .env.example             # Environment variable template

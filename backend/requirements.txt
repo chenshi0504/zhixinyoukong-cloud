@@ -1,0 +1,31 @@
+# ============================================================
+# 智信优控 · 云端后端 依赖清单
+# 版本下限与本地 backend/requirements.txt 对齐
+# ============================================================
+
+# ---------- Web 框架 ----------
+fastapi>=0.104.1
+uvicorn[standard]>=0.24.0
+python-multipart>=0.0.6
+starlette>=0.27.0
+
+# ---------- ORM / 数据库 ----------
+sqlalchemy>=2.0.23
+alembic>=1.12.1
+psycopg2-binary>=2.9.9
+
+# ---------- 数据模型 / 配置 ----------
+pydantic>=2.5.0
+pydantic-settings>=2.1.0
+packaging>=24.0
+
+# ---------- 认证 / 加密 ----------
+python-jose[cryptography]>=3.3.0
+bcrypt>=4.0.0
+cryptography>=41.0.0
+
+# ---------- 测试 ----------
+pytest>=7.4.0
+pytest-asyncio>=0.21.0
+httpx>=0.25.0
+hypothesis>=6.80.0

@@ -118,14 +118,18 @@ docker compose up -d             # Nginx :80 → API :9000 → PostgreSQL
 │   ├── .env.production      # Production API base URL
 │   └── vite.config.js       # Build config (GitHub Pages base path)
 ├── nginx/                   # Nginx reverse‑proxy config (Docker / self‑hosted)
-├── deploy/                  # Deployment scripts & tunnel tools
-│   └── start_cloud.bat      # Windows one‑click start (HTTP/HTTPS + tunnel)
+├── deploy/                  # Deployment scripts & tools
+│   ├── start_cloud.bat      # Windows one‑click start (HTTP/HTTPS + tunnel)
+│   └── installer_cloud.iss  # Inno Setup installer script
 ├── docs/                    # Design docs & deployment guide
 ├── docker-compose.yml       # Full‑stack: Nginx + API + PostgreSQL
 ├── .env.example             # Environment variable template
 ├── DEVLOG.md                # Development & test changelog
 └── README.md                # This file
 ```
+
+> **CI/CD note:** The GitHub Actions workflow lives at `/.github/workflows/deploy-cloud-frontend.yml`
+> (required by GitHub). It auto‑deploys `frontend/dist/` to GitHub Pages on push to `main`.
 
 ## API Endpoints
 

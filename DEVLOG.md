@@ -26,7 +26,7 @@
 ### API Prefix Convention
 
 - **Cloud endpoints**: `/api/cloud/*` (auth, sync, tasks, reports, orgs, licenses, analytics, etc.)
-- **Local endpoints**: `/api/v1/*` (local experiment platform)
+- **Local endpoints** (separate repo): `/api/v1/*`
 
 ### Roles
 
@@ -56,44 +56,14 @@
 - GitHub Pages deployment active (3 deployments total)
 
 #### Configuration Files Created
-- `cloud/backend/.env` — Production config (SQLite, strong SECRET_KEY, CORS for GitHub Pages + tunnel)
-- `cloud/frontend/.env.production` — `VITE_API_BASE_URL` for production builds
-- `cloud/docs/部署指南.md` — Deployment guide (Chinese)
+- `backend/.env` — Production config (SQLite, strong SECRET_KEY, CORS for GitHub Pages + tunnel)
+- `frontend/.env.production` — `VITE_API_BASE_URL` for production builds
+- `docs/部署指南.md` — Deployment guide (Chinese)
 
 #### Scripts Updated
-- `cloud/scripts/start_cloud.bat` — Added dependency check, HTTP/HTTPS mode selection, optional cpolar/cloudflared integration
-- `cloud/nginx/nginx.conf` — Added frontend SPA serving, `client_max_body_size 50m`, `proxy_read_timeout 120s`
-- `.github/workflows/deploy-cloud-frontend.yml` — Added `VITE_API_BASE_URL` from GitHub repo variables
-
-#### Local Installer Integration
-- `installer/env/config.local.env` — Added `CLOUD_API_URL` and `CLOUD_API_VERIFY_SSL` fields
-- Three methods documented for connecting local installer to cloud:
-  1. Pre-packaging `.env` modification (recommended)
-  2. Post-install `.env` edit
-  3. Environment variable override (`setx CLOUD_API_URL ...`)
-
----
-
-### 2026-04-08 — v3.3.1 Test Feedback Fixes
-
-**Milestone**: All 10 issues from test feedback `from_test_to_dev_v3.3.0_20260407_1611.md` resolved.
-
-| # | Issue | Fix |
-|---|-------|-----|
-| 1 | `一键配置环境.bat` not executing | Rewrote script, removed admin dependency |
-| 2 | `/SILENT` install requires admin | Switched to user-level ops (`setx`, `InstallAllUsers=0`) |
-| 3 | `config.local.env` all commented | Key configs now active by default, bat auto-fills paths |
-| 4 | CARLA guide has no direct download link | Added S3 mirror link, GPU requirements, prerequisites |
-| 5 | `test1.mp4` missing | Created `_generate_test_video.py` + defensive error messages |
-| 6 | DTALite missing `mfc140.dll` | Script auto-detects and installs VC++ Runtime |
-| 7 | `sys.executable` restarts platform | All 5 services now use `_resolve_python()` — never uses `sys.executable` in frozen mode |
-| 8 | `research_src` directory missing | `_resolve_research_dir()` searches 4 candidate paths |
-| 9 | Bottom status bar (new feature) | Backend API + frontend JS component injected in 3 pages |
-| 10 | CARLA needs DirectX Runtime | Script detects `d3dx9_43.dll`, prompts installation |
-
-#### Additional Fixes During Packaging
-- **WinError 5**: `detection_server.py` now falls back to `%APPDATA%\智信优控\detector\` when `BASE_DIR` is read-only
-- **Cython compilation**: Added missing `_AVAILABLE` flag declarations in `main.py` and `main_batch.py`
+- `deploy/start_cloud.bat` — Added dependency check, HTTP/HTTPS mode selection, optional tunnel integration
+- `nginx/nginx.conf` — Added frontend SPA serving, `client_max_body_size 50m`, `proxy_read_timeout 120s`
+- GitHub Actions workflow — Added `VITE_API_BASE_URL` from repo variables
 
 ---
 
@@ -161,25 +131,14 @@
 | API URL in build | grep `trycloudflare` in `client-*.js` | ✅ `baseURL` correctly set |
 | gh-pages push | `git push -f origin gh-pages` | ✅ 47 files, 974KB |
 
-### 2026-04-07 — Local Installer Test (by QA)
-
-- Environment: Windows, no NVIDIA GPU
-- Installer: `installer_v3.3_20260406`
-- 10 issues identified → all resolved in v3.3.1
-- Full test report: `output/dev_test_conversation/from_test_to_dev_v3.3.0_20260407_1611.md`
-- Fix report: `output/dev_test_conversation/from_dev_to_test_v3.3.1_20260408_1930.md`
-
 ---
 
 ## Default Credentials
 
-| Platform | Username | Password | Role |
-|----------|----------|----------|------|
-| Cloud | admin | 123456 | super_admin |
-| Cloud | teacher | 123456 | teacher |
-| Local | admin | 123456 | admin |
-| Local | teacher | 123456 | teacher |
-| Local | student | 123456 | student |
+| Username | Password | Role |
+|----------|----------|------|
+| admin | 123456 | super_admin |
+| teacher | 123456 | teacher |
 
 ---
 
@@ -195,38 +154,26 @@
 ## File Structure
 
 ```
-cloud/
-├── backend/
+├── backend/                 # Cloud API server (FastAPI :9000)
 │   ├── app/
-│   │   ├── main.py          # FastAPI application entry
-│   │   ├── config.py        # Settings (pydantic-settings)
-│   │   ├── database.py      # SQLAlchemy engine + session
-│   │   ├── deps.py          # Dependency injection (auth, db)
-│   │   ├── seed.py          # Default account seeding
+│   │   ├── main.py          # App entry + router registration
+│   │   ├── config.py        # pydantic-settings + .env loading
 │   │   ├── models/          # SQLAlchemy ORM models
 │   │   ├── schemas/         # Pydantic request/response schemas
-│   │   ├── routers/         # API route handlers
-│   │   └── services/        # Business logic (auth, license, etc.)
-│   ├── .env                 # Production config (gitignored)
-│   ├── cert.pem / key.pem   # Self-signed TLS certificates
-│   ├── requirements.txt     # Python dependencies
+│   │   ├── routers/         # 12 API route modules
+│   │   └── services/        # Business logic (auth, license)
+│   ├── tests/               # Pytest test suite
+│   ├── requirements.txt
 │   └── Dockerfile
-├── frontend/
+├── frontend/                # Cloud web portal (Vue 3 SPA)
 │   ├── src/
-│   │   ├── api/client.js    # Axios instance with token refresh
-│   │   ├── views/           # Vue page components
-│   │   ├── layouts/         # Admin + Teacher layouts
-│   │   ├── router/          # Vue Router config
-│   │   └── stores/          # Pinia stores
-│   ├── .env.production      # Production API URL
-│   ├── vite.config.js       # Build config (GitHub Pages base path)
-│   └── dist/                # Build output (deployed to gh-pages)
-├── nginx/nginx.conf          # Nginx reverse proxy config
-├── scripts/
-│   ├── start_cloud.bat       # Windows startup script
-│   └── cloudflared.exe       # Cloudflare Tunnel binary
-├── docs/部署指南.md           # Deployment guide (Chinese)
-├── docker-compose.yml        # Docker Compose (Nginx + API + PostgreSQL)
-├── .env.example              # Environment variable template
-└── DEVLOG.md                 # This file
+│   ├── .env.production      # Production API base URL
+│   └── vite.config.js       # GitHub Pages base path config
+├── nginx/                   # Nginx reverse proxy
+├── deploy/                  # Deployment scripts & tunnel tools
+├── docs/                    # Documentation
+├── docker-compose.yml       # Nginx + API + PostgreSQL
+├── .env.example
+├── DEVLOG.md                # This file
+└── README.md
 ```

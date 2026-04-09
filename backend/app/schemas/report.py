@@ -15,8 +15,6 @@ class ReportRead(BaseModel):
     submitted_at: datetime
     graded_at: datetime | None
     updated_at: datetime
-    student_name: str | None = None
-    task_title: str | None = None
 
     model_config = ConfigDict(from_attributes=True)
 

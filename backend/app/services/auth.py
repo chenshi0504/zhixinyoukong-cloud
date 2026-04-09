@@ -83,15 +83,9 @@ def revoke_all_refresh_tokens(db: Session, user_id: int) -> None:
     db.commit()
 
 
-def authenticate_user(db: Session, username: str, password: str, org_id: int | None = None) -> Optional[User]:
+def authenticate_user(db: Session, username: str, password: str) -> Optional[User]:
     """验证用户名密码，返回用户或 None。"""
-    query = db.query(User).filter(User.username == username, User.is_active == True)
-    if org_id is not None:
-        query = query.filter(User.org_id == org_id)
-    users = query.limit(2).all()
-    if len(users) != 1:
-        return None
-    user = users[0]
+    user = db.query(User).filter(User.username == username, User.is_active == True).first()
     if user is None or not verify_password(password, user.password_hash):
         return None
     return user

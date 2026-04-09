@@ -8,7 +8,6 @@ from sqlalchemy.orm import Session
 
 from ..database import get_db
 from ..deps import get_current_user, require_role
-from ..models.classroom import Class, student_classes
 from ..models.user import User
 from ..schemas.user import UserCreate, UserRead, UserUpdate, PasswordResetRequest
 from ..schemas.common import PagedResponse
@@ -23,23 +22,12 @@ def list_users(
     page_size: int = Query(10, ge=1, le=50),
     org_id: int | None = Query(None),
     role: str | None = Query(None),
-    scope: str | None = Query(None),
     db: Session = Depends(get_db),
-    current_user: User = Depends(require_role("super_admin", "org_admin", "teacher")),
+    current_user: User = Depends(get_current_user),
 ):
     # Org_Admin 只能看本机构用户
     q = db.query(User)
-    if current_user.role == "teacher":
-        if scope == "org":
-            q = q.filter(User.org_id == current_user.org_id, User.role == "student")
-        else:
-            q = (
-                q.join(student_classes, student_classes.c.student_id == User.id)
-                .join(Class, Class.id == student_classes.c.class_id)
-                .filter(Class.teacher_id == current_user.id)
-                .distinct()
-            )
-    elif current_user.role == "org_admin":
+    if current_user.role == "org_admin":
         q = q.filter(User.org_id == current_user.org_id)
     elif org_id is not None:
         q = q.filter(User.org_id == org_id)

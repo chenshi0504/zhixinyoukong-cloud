@@ -2,11 +2,9 @@
 License 服务：License key 生成、RSA 签名/验证 Activation_Token。
 """
 import json
-import os
 import base64
 import secrets
 import hashlib
-import logging
 from datetime import datetime, timedelta, timezone
 from typing import Optional
 
@@ -31,87 +29,38 @@ def calculate_expiry(license_type: str, from_dt: Optional[datetime] = None) -> O
     return None  # permanent
 
 
-_logger = logging.getLogger(__name__)
-
-
-def _load_rsa_private_key():
-    """Load RSA private key from configured path. Returns None if unavailable."""
-    from ..config import get_settings
-    settings = get_settings()
-    key_path = settings.rsa_private_key_path
-    if not key_path:
-        # Default: look for license_private.pem next to the cloud backend root
-        default_path = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))), "license_private.pem")
-        if os.path.isfile(default_path):
-            key_path = default_path
-    if not key_path or not os.path.isfile(key_path):
-        return None
-    try:
-        from cryptography.hazmat.primitives.serialization import load_pem_private_key
-        with open(key_path, "rb") as f:
-            return load_pem_private_key(f.read(), password=None)
-    except Exception as e:
-        _logger.warning(f"Failed to load RSA private key: {e}")
-        return None
-
-
 def _sign_payload(payload: dict) -> str:
     """
     签名 Activation_Token。
-    优先使用 RSA-PSS 非对称签名（私钥在云端）。
-    若无 RSA 密钥，回退到 HMAC-SHA256（开发/测试环境）。
+    简化实现：使用 HMAC-SHA256（与 SECRET_KEY 对称签名）。
+    生产环境可替换为 RSA 非对称签名。
     格式：base64(json_payload).base64(signature)
     """
+    from ..config import get_settings
+    settings = get_settings()
+
     payload_bytes = json.dumps(payload, sort_keys=True, default=str).encode()
     payload_b64 = base64.urlsafe_b64encode(payload_bytes).decode()
 
-    rsa_key = _load_rsa_private_key()
-    if rsa_key is not None:
-        from cryptography.hazmat.primitives import hashes
-        from cryptography.hazmat.primitives.asymmetric import padding
-        sig_bytes = rsa_key.sign(
-            payload_b64.encode(),
-            padding.PKCS1v15(),
-            hashes.SHA256(),
-        )
-        sig_b64 = base64.urlsafe_b64encode(sig_bytes).decode()
-        return f"{payload_b64}.{sig_b64}"
-
-    # Fallback: HMAC-SHA256 (dev mode)
-    _logger.warning("RSA key not found, falling back to HMAC signing (dev mode)")
-    from ..config import get_settings
-    settings = get_settings()
     sig_input = f"{payload_b64}.{settings.secret_key}".encode()
     signature = hashlib.sha256(sig_input).hexdigest()
     sig_b64 = base64.urlsafe_b64encode(signature.encode()).decode()
+
     return f"{payload_b64}.{sig_b64}"
 
 
 def _verify_signature(token: str) -> Optional[dict]:
     """验证 Activation_Token 签名，返回 payload 或 None。"""
+    from ..config import get_settings
+    settings = get_settings()
+
     parts = token.split(".", 1)
     if len(parts) != 2:
         return None
 
     payload_b64, sig_b64 = parts
 
-    # Try RSA verification first
-    rsa_key = _load_rsa_private_key()
-    if rsa_key is not None:
-        try:
-            from cryptography.hazmat.primitives import hashes
-            from cryptography.hazmat.primitives.asymmetric import padding
-            pub_key = rsa_key.public_key()
-            sig_bytes = base64.urlsafe_b64decode(sig_b64)
-            pub_key.verify(sig_bytes, payload_b64.encode(), padding.PKCS1v15(), hashes.SHA256())
-            payload_bytes = base64.urlsafe_b64decode(payload_b64)
-            return json.loads(payload_bytes)
-        except Exception:
-            return None
-
-    # Fallback: HMAC-SHA256 (dev mode)
-    from ..config import get_settings
-    settings = get_settings()
+    # 重新计算签名
     sig_input = f"{payload_b64}.{settings.secret_key}".encode()
     expected_sig = hashlib.sha256(sig_input).hexdigest()
     expected_b64 = base64.urlsafe_b64encode(expected_sig.encode()).decode()

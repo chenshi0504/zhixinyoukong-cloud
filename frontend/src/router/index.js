@@ -27,8 +27,7 @@ const routes = [
     path: '/teacher',
     component: () => import('@/layouts/TeacherLayout.vue'),
     children: [
-      { path: '', redirect: '/teacher/classes' },
-      { path: 'classes', name: 'TeacherClasses', component: () => import('@/views/Teacher/TeacherClasses.vue') },
+      { path: '', redirect: '/teacher/tasks' },
       { path: 'tasks', name: 'TeacherTasks', component: () => import('@/views/Teacher/TeacherTasks.vue') },
       { path: 'reports', name: 'TeacherReports', component: () => import('@/views/Teacher/TeacherReports.vue') },
       { path: 'students', name: 'TeacherStudents', component: () => import('@/views/Teacher/TeacherStudents.vue') },
@@ -46,15 +45,6 @@ router.beforeEach((to) => {
   const token = localStorage.getItem('access_token')
   if (!to.meta.public && !token) {
     return { name: 'Login' }
-  }
-
-  const user = JSON.parse(localStorage.getItem('user') || 'null')
-  const isTeacher = user?.role === 'teacher'
-  if (token && isTeacher && !to.path.startsWith('/teacher')) {
-    return { name: 'TeacherClasses' }
-  }
-  if (token && !isTeacher && to.path.startsWith('/teacher')) {
-    return { name: 'Dashboard' }
   }
 })
 

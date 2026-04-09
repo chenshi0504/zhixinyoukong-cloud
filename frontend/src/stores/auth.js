@@ -22,18 +22,10 @@ export const useAuthStore = defineStore('auth', () => {
     localStorage.setItem('user', JSON.stringify(u))
   }
 
-  async function login(username, password, orgId = null) {
-    const payload = { username, password }
-    if (orgId) payload.org_id = orgId
-    const { data } = await api.post('/api/cloud/auth/login', payload)
+  async function login(username, password) {
+    const { data } = await api.post('/api/cloud/auth/login', { username, password })
     setTokens(data.access_token, data.refresh_token)
     setUser(data.user)
-    return data
-  }
-
-  async function fetchCurrentUser() {
-    const { data } = await api.get('/api/cloud/auth/me')
-    setUser(data)
     return data
   }
 
@@ -65,6 +57,6 @@ export const useAuthStore = defineStore('auth', () => {
   return {
     accessToken, refreshToken, user,
     isLoggedIn, userRole,
-    login, fetchCurrentUser, logout, refresh, clearAuth,
+    login, logout, refresh, clearAuth,
   }
 })

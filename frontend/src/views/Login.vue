@@ -13,7 +13,7 @@
             <h3 class="role-label">管理员</h3>
             <p class="role-desc">平台管理与运维</p>
           </div>
-          <div class="role-card" @click="enterTeacherLogin">
+          <div class="role-card" @click="mode = 'login'; selectedRole = 'teacher'">
             <div class="role-icon">🎓</div>
             <h3 class="role-label">教师</h3>
             <p class="role-desc">教学任务与报告</p>
@@ -24,19 +24,9 @@
       <!-- 步骤2：登录表单 -->
       <div v-else-if="mode === 'login'" class="login-card">
         <div class="card-header">
-          <h2>{{ selectedRole === 'admin' ? '管理员登录' : '教师登录（按机构）' }}</h2>
+          <h2>{{ selectedRole === 'admin' ? '管理员登录' : '教师登录' }}</h2>
         </div>
         <form @submit.prevent="handleLogin">
-          <div v-if="selectedRole === 'teacher'" class="form-group">
-            <div class="input-container" :class="{ error: shakeInputs && !teacherOrgId }">
-              <span class="input-icon">🏫</span>
-              <select v-model="teacherOrgId">
-                <option value="">请选择所属学校/机构</option>
-                <option v-for="org in orgList" :key="org.id" :value="String(org.id)">{{ org.name }}</option>
-              </select>
-            </div>
-            <div class="field-note">请选择教师所属学校/机构后再登录</div>
-          </div>
           <div class="form-group">
             <div class="input-container" :class="{ error: shakeInputs }">
               <span class="input-icon">👤</span>
@@ -55,8 +45,8 @@
           </button>
         </form>
         <div class="link-row">
-          <span class="back-link" @click="backToRoleSelect">← 重新选择</span>
-          <span v-if="selectedRole === 'teacher'" class="register-link" @click="openTeacherRegister">教师注册 →</span>
+          <span class="back-link" @click="mode = 'select'; selectedRole = ''">← 重新选择</span>
+          <span v-if="selectedRole === 'teacher'" class="register-link" @click="mode = 'register'">教师注册 →</span>
         </div>
         <div class="status-bar">
           <span class="status-dot" :class="statusType"></span>
@@ -66,7 +56,7 @@
 
       <!-- 教师注册表单 -->
       <div v-else-if="mode === 'register'" class="login-card">
-        <div class="card-header"><h2>教师注册（所属机构）</h2></div>
+        <div class="card-header"><h2>教师注册</h2></div>
         <form @submit.prevent="handleRegister">
           <div class="form-group">
             <div class="input-container">
@@ -75,21 +65,9 @@
             </div>
           </div>
           <div class="form-group">
-            <div v-if="!teacherNewOrgMode" class="input-container">
+            <div class="input-container">
               <span class="input-icon">🏢</span>
-              <select v-model="teacherOrgId">
-                <option value="">请选择所属学校/机构</option>
-                <option v-for="org in orgList" :key="org.id" :value="String(org.id)">{{ org.name }}</option>
-              </select>
-            </div>
-            <div v-else class="input-container">
-              <span class="input-icon">🏢</span>
-              <input v-model="regForm.org_name" type="text" placeholder="请输入学校/机构名称" required />
-            </div>
-            <div class="field-note">
-              <span class="back-link" @click="teacherNewOrgMode = !teacherNewOrgMode">
-                {{ teacherNewOrgMode ? '← 选择已有机构' : '没有我的机构？手动填写' }}
-              </span>
+              <input v-model="regForm.org_name" type="text" placeholder="请输入所属机构" required />
             </div>
           </div>
           <div class="form-group">
@@ -109,7 +87,7 @@
           </button>
         </form>
         <div class="link-row">
-          <span class="back-link" @click="mode = 'login'; selectedRole = 'teacher'; teacherNewOrgMode = false">← 返回登录</span>
+          <span class="back-link" @click="mode = 'login'; selectedRole = 'teacher'">← 返回登录</span>
         </div>
         <div class="status-bar">
           <span class="status-dot" :class="statusType"></span>
@@ -128,7 +106,7 @@
             <div class="info-row"><span class="info-label">机构：</span><span class="info-value">{{ regResult.org_name }}</span></div>
           </div>
         </div>
-        <button class="login-button" @click="useRegisteredAccount">
+        <button class="login-button" @click="mode = 'login'; selectedRole = 'teacher'; form.username = regResult.username">
           前往登录
         </button>
       </div>
@@ -152,20 +130,11 @@ const shakeInputs = ref(false)
 const statusMsg = ref('')
 const statusType = ref('')
 const regResult = ref({})
-const orgList = ref([])
-const teacherOrgId = ref('')
-const teacherNewOrgMode = ref(false)
 
 const form = reactive({ username: '', password: '' })
 const regForm = reactive({ real_name: '', org_name: '', password: '', confirmPassword: '' })
 
 onMounted(async () => {
-  try {
-    const { data } = await api.get('/api/cloud/public/orgs')
-    orgList.value = data || []
-  } catch {
-    orgList.value = []
-  }
   try {
     await api.get('/api/cloud/health')
     statusMsg.value = '后端服务已连接'
@@ -176,37 +145,13 @@ onMounted(async () => {
   }
 })
 
-function enterTeacherLogin() {
-  selectedRole.value = 'teacher'
-  mode.value = 'login'
-  teacherNewOrgMode.value = false
-}
-
-function backToRoleSelect() {
-  mode.value = 'select'
-  selectedRole.value = ''
-  teacherNewOrgMode.value = false
-}
-
-function openTeacherRegister() {
-  mode.value = 'register'
-  teacherNewOrgMode.value = false
-}
-
 async function handleLogin() {
   if (!form.username || !form.password) {
     triggerShake(); statusMsg.value = '请输入用户名和密码'; statusType.value = 'err'; return
   }
-  if (selectedRole.value === 'teacher' && !teacherOrgId.value) {
-    triggerShake(); statusMsg.value = '请先选择所属学校/机构'; statusType.value = 'err'; return
-  }
   loading.value = true; statusMsg.value = '登录中...'; statusType.value = ''
   try {
-    const data = await auth.login(
-      form.username,
-      form.password,
-      selectedRole.value === 'teacher' ? Number(teacherOrgId.value) : null,
-    )
+    const data = await auth.login(form.username, form.password)
     const role = data.user.role
     if (selectedRole.value === 'teacher' && role !== 'teacher') {
       statusMsg.value = '该账号不是教师角色'; statusType.value = 'err'; auth.clearAuth(); loading.value = false; return
@@ -217,7 +162,7 @@ async function handleLogin() {
     localStorage.setItem('login_mode', selectedRole.value)
     statusMsg.value = '登录成功！正在跳转...'; statusType.value = 'ok'
     setTimeout(() => {
-      router.push(selectedRole.value === 'teacher' ? '/teacher/classes' : '/dashboard')
+      router.push(selectedRole.value === 'teacher' ? '/teacher/tasks' : '/dashboard')
     }, 500)
   } catch (e) {
     statusMsg.value = e.response?.data?.detail || '用户名或密码错误'; statusType.value = 'err'; triggerShake()
@@ -225,14 +170,8 @@ async function handleLogin() {
 }
 
 async function handleRegister() {
-  if (!regForm.real_name || !regForm.password) {
+  if (!regForm.real_name || !regForm.org_name || !regForm.password) {
     statusMsg.value = '请填写所有字段'; statusType.value = 'err'; return
-  }
-  if (!teacherNewOrgMode.value && !teacherOrgId.value) {
-    statusMsg.value = '请选择所属学校/机构'; statusType.value = 'err'; return
-  }
-  if (teacherNewOrgMode.value && !regForm.org_name.trim()) {
-    statusMsg.value = '请输入学校/机构名称'; statusType.value = 'err'; return
   }
   if (regForm.password.length < 6) {
     statusMsg.value = '密码长度不能少于6位'; statusType.value = 'err'; return
@@ -244,28 +183,15 @@ async function handleRegister() {
   try {
     const { data } = await api.post('/api/cloud/auth/register', {
       real_name: regForm.real_name,
-      org_id: teacherNewOrgMode.value ? null : Number(teacherOrgId.value),
-      org_name: teacherNewOrgMode.value ? regForm.org_name.trim() : null,
+      org_name: regForm.org_name,
       password: regForm.password,
     })
     regResult.value = data
-    teacherOrgId.value = data.org_id ? String(data.org_id) : teacherOrgId.value
-    teacherNewOrgMode.value = false
     mode.value = 'register-success'
     statusMsg.value = ''; statusType.value = ''
   } catch (e) {
     statusMsg.value = e.response?.data?.detail || '注册失败'; statusType.value = 'err'
   } finally { regLoading.value = false }
-}
-
-function useRegisteredAccount() {
-  mode.value = 'login'
-  selectedRole.value = 'teacher'
-  form.username = regResult.value.username || form.username
-  form.password = ''
-  if (regResult.value.org_id) {
-    teacherOrgId.value = String(regResult.value.org_id)
-  }
 }
 
 function triggerShake() {
@@ -333,13 +259,8 @@ function triggerShake() {
   flex: 1; height: 100%; padding: 0 15px; border: none; background: transparent;
   font-size: 14px; outline: none; font-family: inherit;
 }
-.input-container select {
-  flex: 1; height: 100%; padding: 0 15px; border: none; background: transparent;
-  font-size: 14px; outline: none; font-family: inherit; color: #333; appearance: none;
-}
 .input-container input::placeholder { color: #999; }
 .input-container.error { border-color: #dc3545; animation: shake 0.5s ease-in-out; }
-.field-note { margin-top: 8px; font-size: 12px; color: #666; text-align: left; }
 .login-button {
   width: 100%; height: 50px;
   background: linear-gradient(135deg, #2C5AA0, #4A90E2);

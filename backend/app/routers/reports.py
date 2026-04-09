@@ -5,30 +5,17 @@ import os
 from datetime import datetime, timezone
 from fastapi import APIRouter, Depends, HTTPException, Query, UploadFile, File, Form, status
 from fastapi.responses import FileResponse
-from sqlalchemy.orm import Session, joinedload
+from sqlalchemy.orm import Session
 
 from ..database import get_db
 from ..deps import get_current_user, require_role
 from ..config import get_settings
 from ..models.report import Report
-from ..models.task import Task
 from ..models.user import User
 from ..schemas.report import ReportRead, GradeRequest
 from ..schemas.common import PagedResponse
 
 router = APIRouter(prefix="/api/cloud/reports", tags=["报告管理"])
-
-
-def _get_accessible_report(db: Session, report_id: int, current_user: User) -> Report:
-    q = db.query(Report).join(Task, Report.task_id == Task.id).filter(Report.id == report_id)
-    if current_user.role == "org_admin":
-        q = q.filter(Task.org_id == current_user.org_id)
-    elif current_user.role == "teacher":
-        q = q.filter(Task.teacher_id == current_user.id)
-    report = q.options(joinedload(Report.student), joinedload(Report.task)).first()
-    if report is None:
-        raise HTTPException(status_code=404, detail="报告不存在")
-    return report
 
 
 @router.get("", response_model=PagedResponse[ReportRead])
@@ -41,13 +28,7 @@ def list_reports(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    q = db.query(Report).join(Task, Report.task_id == Task.id)
-    if current_user.role == "org_admin":
-        q = q.filter(Task.org_id == current_user.org_id)
-    elif current_user.role == "teacher":
-        q = q.filter(Task.teacher_id == current_user.id)
-    elif current_user.role == "student":
-        q = q.filter(Report.student_id == current_user.id)
+    q = db.query(Report)
     if task_id:
         q = q.filter(Report.task_id == task_id)
     if student_id:
@@ -56,23 +37,8 @@ def list_reports(
         q = q.filter(Report.status == status_filter)
     total = q.count()
     pages = (total + page_size - 1) // page_size if total > 0 else 1
-    items = (
-        q.options(joinedload(Report.student), joinedload(Report.task))
-        .order_by(Report.id.desc())
-        .offset((page - 1) * page_size)
-        .limit(page_size)
-        .all()
-    )
-    # Populate student_name and task_title
-    result = []
-    for item in items:
-        r = ReportRead.model_validate(item)
-        if item.student:
-            r.student_name = item.student.real_name or item.student.username
-        if item.task:
-            r.task_title = item.task.title
-        result.append(r)
-    return PagedResponse(items=result, total=total, page=page, page_size=page_size, pages=pages)
+    items = q.order_by(Report.id.desc()).offset((page - 1) * page_size).limit(page_size).all()
+    return PagedResponse(items=items, total=total, page=page, page_size=page_size, pages=pages)
 
 
 @router.post("/upload", response_model=ReportRead, status_code=status.HTTP_201_CREATED)
@@ -111,7 +77,9 @@ def grade_report(
     db: Session = Depends(get_db),
     current_user: User = Depends(require_role("super_admin", "org_admin", "teacher")),
 ):
-    report = _get_accessible_report(db, report_id, current_user)
+    report = db.query(Report).filter(Report.id == report_id).first()
+    if report is None:
+        raise HTTPException(status_code=404, detail="报告不存在")
     report.score = body.score
     report.feedback = body.feedback
     report.grader_id = current_user.id
@@ -128,7 +96,9 @@ def download_report(
     db: Session = Depends(get_db),
     current_user: User = Depends(require_role("super_admin", "org_admin", "teacher")),
 ):
-    report = _get_accessible_report(db, report_id, current_user)
+    report = db.query(Report).filter(Report.id == report_id).first()
+    if report is None:
+        raise HTTPException(status_code=404, detail="报告不存在")
     if not report.file_path or not os.path.exists(report.file_path):
         raise HTTPException(status_code=404, detail="文件不存在")
     return FileResponse(report.file_path, filename=report.original_filename)

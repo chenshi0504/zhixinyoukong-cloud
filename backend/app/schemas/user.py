@@ -32,7 +32,6 @@ class UserRead(BaseModel):
 class LoginRequest(BaseModel):
     username: str
     password: str
-    org_id: int | None = None
 
 
 class LoginResponse(BaseModel):
@@ -44,29 +43,14 @@ class LoginResponse(BaseModel):
 
 class TeacherRegisterRequest(BaseModel):
     real_name: str
+    org_name: str
     password: str
-    org_id: int | None = None
-    org_name: str | None = None
 
 
 class TeacherRegisterResponse(BaseModel):
     username: str
     real_name: str
-    org_id: int | None = None
     org_name: str
-    message: str = "注册成功"
-
-
-class UserRegisterRequest(BaseModel):
-    """学生注册：选择机构+班级，系统自动分配用户名"""
-    org_id: int
-    class_id: int
-    real_name: str
-    password: str
-
-
-class UserRegisterResponse(BaseModel):
-    user: UserRead
     message: str = "注册成功"
 
 

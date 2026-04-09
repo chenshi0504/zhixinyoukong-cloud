@@ -2,10 +2,7 @@
   <div class="teacher-layout">
     <header class="header">
       <div class="header-content">
-        <div>
-          <h1 class="platform-title">智信优控 · 教师工作台</h1>
-          <div class="org-text">当前机构：{{ currentOrgName }}</div>
-        </div>
+        <h1 class="platform-title">智信优控 · 教师工作台</h1>
         <div class="user-info">
           <span class="welcome-text">欢迎，{{ auth.user?.real_name || auth.user?.username }}（教师）</span>
           <button class="btn-action" @click="showPwdDialog = true">修改密码</button>
@@ -22,10 +19,6 @@
           text-color="#a0b4c8"
           active-text-color="#fff"
         >
-          <el-menu-item index="/teacher/classes">
-            <el-icon><School /></el-icon>
-            <span>班级管理</span>
-          </el-menu-item>
           <el-menu-item index="/teacher/tasks">
             <el-icon><Document /></el-icon>
             <span>教学任务</span>
@@ -71,7 +64,7 @@
 </template>
 
 <script setup>
-import { ref, reactive, computed, onMounted } from 'vue'
+import { ref, reactive, computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import { ElMessage } from 'element-plus'
@@ -86,34 +79,9 @@ const activeMenu = computed(() => {
   return '/' + parts[1] + '/' + parts[2]
 })
 
-const orgName = ref('')
-const currentOrgName = computed(() => {
-  if (orgName.value) return orgName.value
-  return auth.user?.org_id ? `机构 #${auth.user.org_id}` : '未绑定机构'
-})
-
 const showPwdDialog = ref(false)
 const pwdLoading = ref(false)
 const pwdForm = reactive({ old_password: '', new_password: '', confirm: '' })
-
-async function loadCurrentOrg() {
-  try {
-    await auth.fetchCurrentUser()
-  } catch { /* ignore */ }
-  if (!auth.user?.org_id) {
-    orgName.value = ''
-    return
-  }
-  try {
-    const { data } = await api.get('/api/cloud/public/orgs')
-    const currentOrg = (data || []).find(item => item.id === auth.user?.org_id)
-    orgName.value = currentOrg?.name || ''
-  } catch {
-    orgName.value = ''
-  }
-}
-
-onMounted(loadCurrentOrg)
 
 async function changePassword() {
   if (!pwdForm.old_password || !pwdForm.new_password) {
@@ -159,7 +127,6 @@ async function handleLogout() {
 }
 .header-content { display: flex; justify-content: space-between; align-items: center; height: 100%; }
 .platform-title { font-size: 1.4rem; font-weight: 600; }
-.org-text { font-size: 0.8rem; opacity: 0.9; margin-top: 4px; }
 .user-info { display: flex; align-items: center; gap: 1rem; }
 .welcome-text { font-size: 0.9rem; }
 .btn-action, .btn-logout {

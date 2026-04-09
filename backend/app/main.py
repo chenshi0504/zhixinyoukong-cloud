@@ -1,11 +1,12 @@
-import os
+﻿import os
 from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from .database import engine, Base
+from .database import engine, Base, SessionLocal
 # 导入所有模型，确保 Base.metadata 包含所有表
 from .models import *  # noqa: F401, F403
+from .seed import seed_default_users
 
 # CORS 允许的来源（环境变量配置，逗号分隔；默认允许所有）
 _allowed_origins_str = os.environ.get(
@@ -22,6 +23,11 @@ ALLOWED_ORIGINS = (
 async def lifespan(app: FastAPI):
     # 开发环境：直接建表；生产环境改为 alembic upgrade head
     Base.metadata.create_all(bind=engine)
+    db = SessionLocal()
+    try:
+        seed_default_users(db)
+    finally:
+        db.close()
     yield
 
 
@@ -50,6 +56,8 @@ from .routers import analytics as analytics_router
 from .routers import updates as updates_router
 from .routers import sync as sync_router
 from .routers import admin as admin_router
+from .routers import public as public_router
+from .routers import classes as classes_router
 
 app.include_router(auth_router.router)
 app.include_router(org_router.router)
@@ -61,6 +69,8 @@ app.include_router(analytics_router.router)
 app.include_router(updates_router.router)
 app.include_router(sync_router.router)
 app.include_router(admin_router.router)
+app.include_router(public_router.router)
+app.include_router(classes_router.router)
 
 
 @app.get("/api/cloud/health")

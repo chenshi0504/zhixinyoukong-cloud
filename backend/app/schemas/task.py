@@ -1,4 +1,4 @@
-from datetime import datetime
+﻿from datetime import datetime
 from pydantic import BaseModel, ConfigDict
 
 
@@ -7,6 +7,7 @@ class TaskCreate(BaseModel):
     description: str | None = None
     module_id: str | None = None
     org_id: int | None = None
+    class_id: int | None = None
     deadline: datetime | None = None
     max_score: int = 100
 
@@ -26,6 +27,7 @@ class TaskRead(BaseModel):
     module_id: str | None
     teacher_id: int | None
     org_id: int | None
+    class_id: int | None
     deadline: datetime | None
     max_score: int
     status: str

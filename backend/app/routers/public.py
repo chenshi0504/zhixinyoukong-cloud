@@ -1,4 +1,4 @@
-"""
+﻿"""
 公开接口（无需认证）：供注册页面获取机构和班级列表。
 """
 from fastapi import APIRouter, Depends, Query

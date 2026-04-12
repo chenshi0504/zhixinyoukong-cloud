@@ -19,6 +19,14 @@
           text-color="#a0b4c8"
           active-text-color="#fff"
         >
+          <el-menu-item index="/teacher/classes">
+            <el-icon><School /></el-icon>
+            <span>班级管理</span>
+          </el-menu-item>
+          <el-menu-item index="/teacher/students">
+            <el-icon><User /></el-icon>
+            <span>学生管理</span>
+          </el-menu-item>
           <el-menu-item index="/teacher/tasks">
             <el-icon><Document /></el-icon>
             <span>教学任务</span>
@@ -26,10 +34,6 @@
           <el-menu-item index="/teacher/reports">
             <el-icon><Files /></el-icon>
             <span>实验报告</span>
-          </el-menu-item>
-          <el-menu-item index="/teacher/students">
-            <el-icon><User /></el-icon>
-            <span>学生管理</span>
           </el-menu-item>
           <el-menu-item index="/teacher/analytics">
             <el-icon><DataAnalysis /></el-icon>

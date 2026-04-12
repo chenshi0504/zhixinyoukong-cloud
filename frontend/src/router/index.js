@@ -27,10 +27,11 @@ const routes = [
     path: '/teacher',
     component: () => import('@/layouts/TeacherLayout.vue'),
     children: [
-      { path: '', redirect: '/teacher/tasks' },
+      { path: '', redirect: '/teacher/classes' },
+      { path: 'classes', name: 'TeacherClasses', component: () => import('@/views/Teacher/TeacherClasses.vue') },
+      { path: 'students', name: 'TeacherStudents', component: () => import('@/views/Teacher/TeacherStudents.vue') },
       { path: 'tasks', name: 'TeacherTasks', component: () => import('@/views/Teacher/TeacherTasks.vue') },
       { path: 'reports', name: 'TeacherReports', component: () => import('@/views/Teacher/TeacherReports.vue') },
-      { path: 'students', name: 'TeacherStudents', component: () => import('@/views/Teacher/TeacherStudents.vue') },
       { path: 'analytics', name: 'TeacherAnalytics', component: () => import('@/views/Teacher/TeacherAnalytics.vue') },
     ],
   },

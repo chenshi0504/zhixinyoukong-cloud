@@ -19,8 +19,9 @@
       <el-table-column prop="created_at" label="创建时间" width="180">
         <template #default="{ row }">{{ fmtDate(row.created_at) }}</template>
       </el-table-column>
-      <el-table-column label="操作" width="260">
+      <el-table-column label="操作" width="320">
         <template #default="{ row }">
+          <el-button size="small" type="primary" @click="viewOverview(row)">查看概况</el-button>
           <el-button size="small" @click="viewDetail(row)">管理学生</el-button>
           <el-button size="small" type="warning" @click="openEdit(row)">编辑</el-button>
           <el-button size="small" type="danger" @click="deleteClass(row)">删除</el-button>
@@ -45,6 +46,56 @@
         <el-button @click="showForm = false">取消</el-button>
         <el-button type="primary" @click="saveClass" :loading="saving">保存</el-button>
       </template>
+    </el-dialog>
+
+    <!-- 班级概况对话框 -->
+    <el-dialog v-model="showOverview" :title="'班级概况 — ' + (overviewClass?.name || '')" width="600px">
+      <el-row :gutter="16" style="margin-bottom:20px">
+        <el-col :span="6">
+          <el-card shadow="hover">
+            <div style="text-align:center">
+              <div style="font-size:28px;color:#409eff;font-weight:600">{{ overviewStats.studentCount }}</div>
+              <div style="color:#909399;margin-top:6px;font-size:13px">学生人数</div>
+            </div>
+          </el-card>
+        </el-col>
+        <el-col :span="6">
+          <el-card shadow="hover">
+            <div style="text-align:center">
+              <div style="font-size:28px;color:#e6a23c;font-weight:600">{{ overviewStats.submitted }}</div>
+              <div style="color:#909399;margin-top:6px;font-size:13px">待批阅</div>
+            </div>
+          </el-card>
+        </el-col>
+        <el-col :span="6">
+          <el-card shadow="hover">
+            <div style="text-align:center">
+              <div style="font-size:28px;color:#67c23a;font-weight:600">{{ overviewStats.graded }}</div>
+              <div style="color:#909399;margin-top:6px;font-size:13px">已批阅</div>
+            </div>
+          </el-card>
+        </el-col>
+        <el-col :span="6">
+          <el-card shadow="hover">
+            <div style="text-align:center">
+              <div style="font-size:28px;color:#909399;font-weight:600">{{ overviewStats.avgScore }}</div>
+              <div style="color:#909399;margin-top:6px;font-size:13px">平均分</div>
+            </div>
+          </el-card>
+        </el-col>
+      </el-row>
+      <h4 style="margin:0 0 12px 0">学生列表</h4>
+      <el-table :data="overviewStudents" v-loading="loadingOverview" stripe size="small" max-height="300">
+        <el-table-column prop="username" label="用户名" />
+        <el-table-column prop="real_name" label="姓名" />
+        <el-table-column label="状态" width="80">
+          <template #default="{ row }">
+            <el-tag :type="row.is_active ? 'success' : 'danger'" size="small">
+              {{ row.is_active ? '正常' : '禁用' }}
+            </el-tag>
+          </template>
+        </el-table-column>
+      </el-table>
     </el-dialog>
 
     <!-- 班级学生管理对话框 -->
@@ -107,6 +158,42 @@ const currentOrgName = computed(() => {
   const current = orgList.value.find(item => item.id === auth.user?.org_id)
   return current?.name || (auth.user?.org_id ? `机构 #${auth.user.org_id}` : '未绑定机构')
 })
+
+// 班级概况
+const showOverview = ref(false)
+const overviewClass = ref(null)
+const overviewStudents = ref([])
+const loadingOverview = ref(false)
+const overviewStats = reactive({ studentCount: 0, submitted: 0, graded: 0, avgScore: '-' })
+
+async function viewOverview(row) {
+  overviewClass.value = row
+  showOverview.value = true
+  loadingOverview.value = true
+  try {
+    const { data: detail } = await api.get(`/api/cloud/classes/${row.id}`)
+    overviewStudents.value = detail.students || []
+    overviewStats.studentCount = overviewStudents.value.length
+    // 获取该班级相关的报告统计
+    try {
+      const { data: reportData } = await api.get('/api/cloud/reports', { params: { class_id: row.id, page_size: 200 } })
+      const reports = reportData.items || reportData
+      overviewStats.submitted = reports.filter(r => r.status === 'submitted').length
+      overviewStats.graded = reports.filter(r => r.status === 'graded').length
+      const scored = reports.filter(r => r.score != null)
+      overviewStats.avgScore = scored.length > 0
+        ? (scored.reduce((s, r) => s + r.score, 0) / scored.length).toFixed(1)
+        : '-'
+    } catch {
+      overviewStats.submitted = 0
+      overviewStats.graded = 0
+      overviewStats.avgScore = '-'
+    }
+  } catch {
+    overviewStudents.value = []
+    Object.assign(overviewStats, { studentCount: 0, submitted: 0, graded: 0, avgScore: '-' })
+  } finally { loadingOverview.value = false }
+}
 
 // 学生管理
 const showStudents = ref(false)

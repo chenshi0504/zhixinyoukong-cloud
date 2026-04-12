@@ -40,6 +40,40 @@
 
 ## Changelog
 
+### 2026-04-12 — v3.4.0 Login 改版 & GitHub Pages 修复
+
+**Milestone**: 登录页增加角色选择 + 后端状态检测；彻底修复 GitHub Pages 缓存问题。
+
+#### Login 页改版
+
+- 登录页新增**角色选择屏**（管理员 / 教师），选择后进入对应登录表单
+- **后端连接状态检测**移到全局可见位置（角色选择页即显示绿色/红色状态条）
+- 登录前检查后端是否在线，未连接时拦截并提示「请先启动云端后端服务」
+- 教师模式支持注册入口
+
+#### GitHub Pages 部署修复
+
+- **根本原因**：GitHub Pages Source 被设为 "GitHub Actions" 而非 "Deploy from branch: gh-pages"，导致推送 gh-pages 无效
+- **修复**：Settings → Pages → Source 改为 `Deploy from a branch: gh-pages / root`
+- **防缓存**：`index.html` 模板添加 `Cache-Control: no-cache` meta 标签
+- **SW 清除**：`index.html` 注入内联脚本，自动注销旧 Service Worker 并清除 CacheStorage
+- **干净部署**：每次用 `--orphan` 新建 gh-pages 分支，避免旧构建文件累积
+
+#### Cloudflare Tunnel 穿透
+
+- 重新建立 Cloudflare quick tunnel，当前公网地址：`https://cad-containing-filters-call.trycloudflare.com`
+- `.env.production` 中 `VITE_API_BASE_URL` 指向该地址
+- CORS 已配置允许 `https://chenshi0504.github.io`
+- 后端 health check 公网验证通过
+
+#### 配置修复
+
+- `vite.config.js`：开发代理 target 从 `localhost:8000` → `localhost:9000`（匹配云端后端端口）
+- `.env.production`：清空过期 Cloudflare tunnel URL，按需填入最新地址
+- `cloudflared.exe` 从 git 仓库移除，加入 `.gitignore`
+
+---
+
 ### 2026-04-08 — v3.3.1 Public Deployment
 
 **Milestone**: Cloud platform deployed to public internet for the first time.

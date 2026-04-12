@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+    <meta http-equiv="Pragma" content="no-cache" />
+    <meta http-equiv="Expires" content="0" />
+    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>智信优控 · 云端管理平台</title>
+    <script type="module" crossorigin src="/zhixinyoukong-cloud/assets/index-DHt5tnCf.js"></script>
+    <link rel="modulepreload" crossorigin href="/zhixinyoukong-cloud/assets/element-plus-CddEPpQf.js">
+    <link rel="stylesheet" crossorigin href="/zhixinyoukong-cloud/assets/index-JOkaxSCk.css">
+  </head>
+  <body>
+    <script>
+      // Kill any stale Service Workers and clear CacheStorage
+      if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.getRegistrations().then(function(regs) {
+          regs.forEach(function(r) { r.unregister(); });
+        });
+        if ('caches' in window) {
+          caches.keys().then(function(keys) {
+            keys.forEach(function(k) { caches.delete(k); });
+          });
+        }
+      }
+    </script>
+    <div id="app"></div>
+  </body>
+</html>

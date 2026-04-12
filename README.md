@@ -4,6 +4,8 @@
 
 [![GitHub Pages](https://img.shields.io/badge/demo-GitHub%20Pages-blue)](https://chenshi0504.github.io/zhixinyoukong-cloud/)
 
+**在线访问地址：<https://chenshi0504.github.io/zhixinyoukong-cloud/>**
+
 ## What Is This Repo?
 
 This repository contains **only the cloud management platform** — a standalone web application for administrators and teachers to manage teaching organizations, classes, experiment tasks, student reports, licenses, and analytics.

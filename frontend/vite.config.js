@@ -24,7 +24,7 @@ export default defineConfig({
     port: 5173,
     proxy: {
       '/api/cloud': {
-        target: 'http://localhost:8000',
+        target: 'http://localhost:9000',
         changeOrigin: true
       }
     }

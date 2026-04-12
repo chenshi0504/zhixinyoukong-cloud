@@ -48,10 +48,6 @@
           <span class="back-link" @click="mode = 'select'; selectedRole = ''">← 重新选择</span>
           <span v-if="selectedRole === 'teacher'" class="register-link" @click="mode = 'register'">教师注册 →</span>
         </div>
-        <div class="status-bar">
-          <span class="status-dot" :class="statusType"></span>
-          <span class="status-text" :class="statusType">{{ statusMsg }}</span>
-        </div>
       </div>
 
       <!-- 教师注册表单 -->
@@ -89,10 +85,6 @@
         <div class="link-row">
           <span class="back-link" @click="mode = 'login'; selectedRole = 'teacher'">← 返回登录</span>
         </div>
-        <div class="status-bar">
-          <span class="status-dot" :class="statusType"></span>
-          <span class="status-text" :class="statusType">{{ statusMsg }}</span>
-        </div>
       </div>
 
       <!-- 注册成功 -->
@@ -109,6 +101,12 @@
         <button class="login-button" @click="mode = 'login'; selectedRole = 'teacher'; form.username = regResult.username">
           前往登录
         </button>
+      </div>
+
+      <!-- 全局状态条（所有模式可见） -->
+      <div class="global-status-bar">
+        <span class="status-dot" :class="statusType"></span>
+        <span class="status-text" :class="statusType">{{ statusMsg }}</span>
       </div>
     </div>
   </div>
@@ -134,20 +132,31 @@ const regResult = ref({})
 const form = reactive({ username: '', password: '' })
 const regForm = reactive({ real_name: '', org_name: '', password: '', confirmPassword: '' })
 
+const backendOnline = ref(false)
+
 onMounted(async () => {
+  await checkBackend()
+})
+
+async function checkBackend() {
   try {
     await api.get('/api/cloud/health')
     statusMsg.value = '后端服务已连接'
     statusType.value = 'ok'
+    backendOnline.value = true
   } catch {
-    statusMsg.value = '后端服务未连接'
+    statusMsg.value = '后端服务未连接 — 请先启动云端后端服务'
     statusType.value = 'err'
+    backendOnline.value = false
   }
-})
+}
 
 async function handleLogin() {
   if (!form.username || !form.password) {
     triggerShake(); statusMsg.value = '请输入用户名和密码'; statusType.value = 'err'; return
+  }
+  if (!backendOnline.value) {
+    statusMsg.value = '后端服务未连接，无法登录 — 请先启动云端后端服务'; statusType.value = 'err'; return
   }
   loading.value = true; statusMsg.value = '登录中...'; statusType.value = ''
   try {
@@ -277,6 +286,10 @@ function triggerShake() {
 }
 .back-link:hover, .register-link:hover { opacity: 0.7; }
 .status-bar { margin-top: 16px; text-align: center; font-size: 13px; }
+.global-status-bar {
+  margin-top: 20px; text-align: center; font-size: 13px;
+  animation: slideUp 0.8s ease-out 0.6s both;
+}
 .status-dot {
   display: inline-block; width: 8px; height: 8px; border-radius: 50%;
   background: #ccc; margin-right: 6px; vertical-align: middle;

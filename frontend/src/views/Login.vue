@@ -171,7 +171,7 @@ async function handleLogin() {
     localStorage.setItem('login_mode', selectedRole.value)
     statusMsg.value = '登录成功！正在跳转...'; statusType.value = 'ok'
     setTimeout(() => {
-      router.push(selectedRole.value === 'teacher' ? '/teacher/tasks' : '/dashboard')
+      router.push(selectedRole.value === 'teacher' ? '/teacher/classes' : '/dashboard')
     }, 500)
   } catch (e) {
     statusMsg.value = e.response?.data?.detail || '用户名或密码错误'; statusType.value = 'err'; triggerShake()

@@ -14,7 +14,7 @@
       <el-table-column prop="id" label="ID" width="60" />
       <el-table-column prop="title" label="任务标题" />
       <el-table-column label="分发班级" width="140">
-        <template #default="{ row }">{{ classMap[row.class_id] || '全部' }}</template>
+        <template #default="{ row }">{{ classMap[row.class_id] || row.class_name || '未指定' }}</template>
       </el-table-column>
       <el-table-column prop="status" label="状态" width="100">
         <template #default="{ row }">
@@ -43,7 +43,7 @@
           <el-input v-model="newTask.title" placeholder="请输入任务标题" />
         </el-form-item>
         <el-form-item label="分发班级">
-          <el-select v-model="newTask.class_id" clearable placeholder="选择班级（不选则全部）" style="width:100%">
+          <el-select v-model="newTask.class_id" placeholder="选择班级" style="width:100%">
             <el-option v-for="c in classList" :key="c.id" :label="c.name" :value="c.id" />
           </el-select>
         </el-form-item>
@@ -121,6 +121,7 @@ function openCreate() {
 
 async function createTask() {
   if (!newTask.title.trim()) { ElMessage.warning('请输入任务标题'); return }
+  if (!newTask.class_id) { ElMessage.warning('请选择分发班级'); return }
   creating.value = true
   try {
     await api.post('/api/cloud/tasks', newTask)

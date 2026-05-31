@@ -35,7 +35,6 @@
           <el-select v-model="createForm.role">
             <el-option label="机构管理员" value="org_admin" />
             <el-option label="教师" value="teacher" />
-            <el-option label="学生" value="student" />
           </el-select>
         </el-form-item>
         <el-form-item label="机构ID"><el-input-number v-model="createForm.org_id" :min="1" /></el-form-item>
@@ -72,7 +71,7 @@ const createDialog = ref(false)
 const resetDialog = ref(false)
 const resetUserId = ref(null)
 const newPassword = ref('')
-const createForm = reactive({ username: '', password: '123456', real_name: '', role: 'student', org_id: 1 })
+const createForm = reactive({ username: '', password: '123456', real_name: '', role: 'teacher', org_id: 1 })
 
 async function loadData() {
   loading.value = true
@@ -82,7 +81,7 @@ async function loadData() {
   } finally { loading.value = false }
 }
 
-function showCreateDialog() { Object.assign(createForm, { username: '', password: '123456', real_name: '', role: 'student', org_id: 1 }); createDialog.value = true }
+function showCreateDialog() { Object.assign(createForm, { username: '', password: '123456', real_name: '', role: 'teacher', org_id: 1 }); createDialog.value = true }
 function showResetDialog(row) { resetUserId.value = row.id; newPassword.value = ''; resetDialog.value = true }
 
 async function handleCreate() {

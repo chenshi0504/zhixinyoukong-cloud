@@ -9,7 +9,7 @@
     <el-table :data="items" v-loading="loading" stripe>
       <el-table-column prop="id" label="ID" width="60" />
       <el-table-column prop="task_id" label="任务ID" width="80" />
-      <el-table-column prop="student_id" label="学生ID" width="80" />
+      <el-table-column prop="student_id" label="提交人ID" width="90" />
       <el-table-column prop="original_filename" label="文件名" show-overflow-tooltip />
       <el-table-column label="状态" width="100">
         <template #default="{ row }">

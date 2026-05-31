@@ -6,7 +6,7 @@ from ..database import Base
 
 class User(Base):
     __tablename__ = "users"
-    __table_args__ = (UniqueConstraint("username", "org_id", name="uq_username_org"),)
+    __table_args__ = (UniqueConstraint("username", name="uq_username"),)
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
     username: Mapped[str] = mapped_column(String(50), nullable=False, index=True)

@@ -11,6 +11,7 @@ from ..deps import get_current_user, require_role
 from ..models.task import Task
 from ..models.report import Report
 from ..models.user import User
+from ..models.classroom import Class, student_classes
 from ..schemas.task import TaskCreate, TaskRead, TaskUpdate
 from ..schemas.common import PagedResponse
 
@@ -27,7 +28,19 @@ def list_tasks(
     current_user: User = Depends(get_current_user),
 ):
     q = db.query(Task)
-    if current_user.role in ("org_admin", "teacher"):
+    if current_user.role == "teacher":
+        q = q.filter(Task.teacher_id == current_user.id)
+    elif current_user.role == "student":
+        class_ids = [
+            row.class_id
+            for row in db.execute(
+                student_classes.select().where(student_classes.c.student_id == current_user.id)
+            ).fetchall()
+        ]
+        if not class_ids:
+            return PagedResponse(items=[], total=0, page=page, page_size=page_size, pages=1)
+        q = q.filter(Task.status == "published", Task.class_id.in_(class_ids))
+    elif current_user.role == "org_admin":
         q = q.filter(Task.org_id == current_user.org_id)
     elif org_id is not None:
         q = q.filter(Task.org_id == org_id)
@@ -45,12 +58,23 @@ def create_task(
     db: Session = Depends(get_db),
     current_user: User = Depends(require_role("super_admin", "org_admin", "teacher")),
 ):
+    cls = None
+    if body.class_id is not None:
+        cls = db.query(Class).filter(Class.id == body.class_id).first()
+        if cls is None:
+            raise HTTPException(status_code=404, detail="班级不存在")
+        if current_user.role == "teacher" and cls.teacher_id != current_user.id:
+            raise HTTPException(status_code=403, detail="只能给自己管理的班级下发任务")
+        if current_user.role == "org_admin" and cls.org_id != current_user.org_id:
+            raise HTTPException(status_code=403, detail="只能给本机构班级下发任务")
+
     task = Task(
         title=body.title,
         description=body.description,
         module_id=body.module_id,
         teacher_id=current_user.id,
-        org_id=body.org_id or current_user.org_id,
+        org_id=(cls.org_id if cls else (body.org_id or current_user.org_id)),
+        class_id=body.class_id,
         deadline=body.deadline,
         max_score=body.max_score,
     )
@@ -70,7 +94,15 @@ def update_task(
     task = db.query(Task).filter(Task.id == task_id).first()
     if task is None:
         raise HTTPException(status_code=404, detail="任务不存在")
+    if current_user.role == "teacher" and task.teacher_id != current_user.id:
+        raise HTTPException(status_code=403, detail="只能修改自己创建的任务")
     for k, v in body.model_dump(exclude_unset=True).items():
+        if k == "class_id" and v is not None:
+            cls = db.query(Class).filter(Class.id == v).first()
+            if cls is None:
+                raise HTTPException(status_code=404, detail="班级不存在")
+            if current_user.role == "teacher" and cls.teacher_id != current_user.id:
+                raise HTTPException(status_code=403, detail="只能给自己管理的班级下发任务")
         setattr(task, k, v)
     db.commit()
     db.refresh(task)
@@ -86,6 +118,8 @@ def delete_task(
     task = db.query(Task).filter(Task.id == task_id).first()
     if task is None:
         raise HTTPException(status_code=404, detail="任务不存在")
+    if current_user.role == "teacher" and task.teacher_id != current_user.id:
+        raise HTTPException(status_code=403, detail="只能删除自己创建的任务")
     if task.status == "published":
         report_count = db.query(sa_func.count(Report.id)).filter(Report.task_id == task_id).scalar() or 0
         if report_count > 0:
@@ -106,6 +140,8 @@ def publish_task(
     task = db.query(Task).filter(Task.id == task_id).first()
     if task is None:
         raise HTTPException(status_code=404, detail="任务不存在")
+    if current_user.role == "teacher" and task.teacher_id != current_user.id:
+        raise HTTPException(status_code=403, detail="只能发布自己创建的任务")
     if task.status != "draft":
         raise HTTPException(status_code=400, detail="只有草稿任务可以发布")
     task.status = "published"

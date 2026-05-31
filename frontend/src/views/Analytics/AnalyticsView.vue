@@ -57,8 +57,8 @@ async function loadOverview() {
   try {
     const { data } = await api.get('/api/cloud/analytics/overview')
     overviewCards.value = [
-      { label: '活跃机构', value: data.active_organizations ?? 0 },
-      { label: '近30天活跃用户', value: data.active_users_30d ?? 0 },
+      { label: '活跃机构', value: data.total_active_orgs ?? 0 },
+      { label: '近30天活跃用户', value: data.active_users_last_30d ?? 0 },
       { label: '总实验次数', value: data.total_experiments ?? 0 },
     ]
   } catch { /* ignore */ }
@@ -70,11 +70,18 @@ async function loadTrends() {
     if (dateRange.value?.length === 2) {
       params.start = dateRange.value[0]
       params.end = dateRange.value[1]
+    } else {
+      const end = new Date()
+      const start = new Date()
+      start.setDate(end.getDate() - 30)
+      params.start = start.toISOString().slice(0, 10)
+      params.end = end.toISOString().slice(0, 10)
     }
     const { data } = await api.get('/api/cloud/analytics/trends', { params })
-    const dates = data.map(d => d.date)
-    const users = data.map(d => d.active_users)
-    const experiments = data.map(d => d.experiments)
+    const rows = data.data || []
+    const dates = rows.map(d => d.report_date)
+    const users = rows.map(d => d.active_users)
+    const experiments = rows.map(d => d.experiment_count)
     trendChart?.setOption({
       tooltip: { trigger: 'axis' },
       legend: { data: ['活跃用户', '实验次数'] },
@@ -91,8 +98,9 @@ async function loadTrends() {
 async function loadModules() {
   try {
     const { data } = await api.get('/api/cloud/analytics/modules')
-    const names = data.map(d => d.module_id)
-    const counts = data.map(d => d.count)
+    const rows = data.data || []
+    const names = rows.map(d => d.module_id)
+    const counts = rows.map(d => d.total_count)
     moduleChart?.setOption({
       tooltip: { trigger: 'axis' },
       xAxis: { type: 'category', data: names, axisLabel: { rotate: 30, fontSize: 11 } },

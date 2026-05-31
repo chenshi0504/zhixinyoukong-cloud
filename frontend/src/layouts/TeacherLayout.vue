@@ -23,17 +23,21 @@
             <el-icon><School /></el-icon>
             <span>班级管理</span>
           </el-menu-item>
-          <el-menu-item index="/teacher/students">
-            <el-icon><User /></el-icon>
-            <span>学生管理</span>
-          </el-menu-item>
           <el-menu-item index="/teacher/tasks">
             <el-icon><Document /></el-icon>
             <span>教学任务</span>
           </el-menu-item>
+          <el-menu-item index="/teacher/messages">
+            <el-icon><Message /></el-icon>
+            <span>班级消息</span>
+          </el-menu-item>
           <el-menu-item index="/teacher/reports">
             <el-icon><Files /></el-icon>
             <span>实验报告</span>
+          </el-menu-item>
+          <el-menu-item index="/teacher/self-algorithms">
+            <el-icon><Cpu /></el-icon>
+            <span>自研算法</span>
           </el-menu-item>
           <el-menu-item index="/teacher/analytics">
             <el-icon><DataAnalysis /></el-icon>
@@ -46,8 +50,15 @@
       </main>
     </div>
 
-    <!-- 修改密码对话框 -->
-    <el-dialog v-model="showPwdDialog" title="修改密码" width="400px" :close-on-click-modal="false">
+    <!-- 修改密码申请对话框 -->
+    <el-dialog v-model="showPwdDialog" title="提交密码修改申请" width="430px" :close-on-click-modal="false">
+      <el-alert
+        type="info"
+        :closable="false"
+        show-icon
+        title="教师密码修改需由管理员审批，通过后新密码才会生效。"
+        style="margin-bottom: 14px"
+      />
       <el-form :model="pwdForm" label-width="80px">
         <el-form-item label="原密码">
           <el-input v-model="pwdForm.old_password" type="password" show-password />
@@ -58,10 +69,13 @@
         <el-form-item label="确认密码">
           <el-input v-model="pwdForm.confirm" type="password" show-password />
         </el-form-item>
+        <el-form-item label="申请说明">
+          <el-input v-model="pwdForm.reason" type="textarea" :rows="2" placeholder="可选，说明修改原因" />
+        </el-form-item>
       </el-form>
       <template #footer>
         <el-button @click="showPwdDialog = false">取消</el-button>
-        <el-button type="primary" @click="changePassword" :loading="pwdLoading">确认修改</el-button>
+        <el-button type="primary" @click="changePassword" :loading="pwdLoading">提交申请</el-button>
       </template>
     </el-dialog>
   </div>
@@ -85,7 +99,7 @@ const activeMenu = computed(() => {
 
 const showPwdDialog = ref(false)
 const pwdLoading = ref(false)
-const pwdForm = reactive({ old_password: '', new_password: '', confirm: '' })
+const pwdForm = reactive({ old_password: '', new_password: '', confirm: '', reason: '' })
 
 async function changePassword() {
   if (!pwdForm.old_password || !pwdForm.new_password) {
@@ -102,16 +116,13 @@ async function changePassword() {
     await api.post('/api/cloud/auth/change-password', {
       old_password: pwdForm.old_password,
       new_password: pwdForm.new_password,
+      reason: pwdForm.reason,
     })
-    ElMessage.success('密码修改成功，请重新登录')
+    ElMessage.success('密码修改申请已提交，等待管理员审批')
     showPwdDialog.value = false
-    setTimeout(() => {
-      auth.clearAuth()
-      localStorage.removeItem('login_mode')
-      router.push('/login')
-    }, 1000)
+    Object.assign(pwdForm, { old_password: '', new_password: '', confirm: '', reason: '' })
   } catch (e) {
-    ElMessage.error(e.response?.data?.detail || '修改失败')
+    ElMessage.error(e.response?.data?.detail || '提交失败')
   } finally { pwdLoading.value = false }
 }
 

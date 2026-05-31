@@ -45,6 +45,16 @@ export const useAuthStore = defineStore('auth', () => {
     return data.access_token
   }
 
+  async function fetchCurrentUser() {
+    try {
+      const { data } = await api.get('/api/cloud/auth/me')
+      setUser(data)
+      return data
+    } catch {
+      return user.value
+    }
+  }
+
   function clearAuth() {
     accessToken.value = ''
     refreshToken.value = ''
@@ -57,6 +67,6 @@ export const useAuthStore = defineStore('auth', () => {
   return {
     accessToken, refreshToken, user,
     isLoggedIn, userRole,
-    login, logout, refresh, clearAuth,
+    login, logout, refresh, fetchCurrentUser, clearAuth,
   }
 })

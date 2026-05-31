@@ -21,8 +21,8 @@
       <el-table-column prop="task_title" label="所属任务" min-width="140">
         <template #default="{ row }">{{ row.task_title || '任务#' + row.task_id }}</template>
       </el-table-column>
-      <el-table-column prop="student_name" label="学生" width="120">
-        <template #default="{ row }">{{ row.student_name || '学生#' + row.student_id }}</template>
+      <el-table-column prop="student_name" label="提交人" width="120">
+        <template #default="{ row }">{{ row.student_name || '成员#' + row.student_id }}</template>
       </el-table-column>
       <el-table-column prop="original_filename" label="文件名" min-width="160">
         <template #default="{ row }">{{ row.original_filename || '-' }}</template>
@@ -51,7 +51,7 @@
 
     <el-dialog v-model="showGrade" title="批阅报告" width="480px">
       <div v-if="gradeForm.studentName" style="margin-bottom:12px;color:#666">
-        <strong>学生：</strong>{{ gradeForm.studentName }}
+        <strong>提交人：</strong>{{ gradeForm.studentName }}
         <span style="margin-left:16px"><strong>任务：</strong>{{ gradeForm.taskTitle }}</span>
       </div>
       <el-form label-width="60px">

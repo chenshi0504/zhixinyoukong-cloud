@@ -11,6 +11,10 @@ class Settings(BaseSettings):
     refresh_token_expire_days: int = 7
     rsa_private_key_path: str = ""
     upload_dir: str = "./uploads"
+    self_algorithm_ai_api_url: str = ""
+    self_algorithm_ai_api_key: str = ""
+    self_algorithm_ai_model: str = "gpt-4o-mini"
+    self_algorithm_ai_timeout_seconds: int = 20
 
     model_config = {"env_file": ".env", "extra": "ignore"}
 

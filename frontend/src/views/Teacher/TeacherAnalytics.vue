@@ -24,7 +24,7 @@ import * as echarts from 'echarts'
 
 const stats = ref([
   { label: '发布任务数', value: 0 },
-  { label: '学生总数', value: 0 },
+  { label: '提交人数', value: 0 },
   { label: '已提交报告', value: 0 },
   { label: '待批阅', value: 0 },
 ])

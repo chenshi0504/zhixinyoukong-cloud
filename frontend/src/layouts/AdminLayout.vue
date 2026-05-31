@@ -34,6 +34,13 @@
             <el-icon><User /></el-icon>
             <span>用户管理</span>
           </el-menu-item>
+          <el-menu-item index="/password-requests">
+            <el-icon><Key /></el-icon>
+            <span class="menu-with-badge">
+              密码审批
+              <el-badge v-if="pendingPasswordCount > 0" :value="pendingPasswordCount" :max="99" class="menu-badge" />
+            </span>
+          </el-menu-item>
           <el-menu-item index="/analytics">
             <el-icon><DataAnalysis /></el-icon>
             <span>统计分析</span>
@@ -52,17 +59,20 @@
 </template>
 
 <script setup>
-import { computed } from 'vue'
+import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
+import api from '@/api/client'
 
 const route = useRoute()
 const router = useRouter()
 const auth = useAuthStore()
+const pendingPasswordCount = ref(0)
+let pendingTimer = null
 
 const activeMenu = computed(() => '/' + route.path.split('/')[1])
 
-const roleMap = { super_admin: '超级管理员', org_admin: '机构管理员', teacher: '教师', student: '学生' }
+const roleMap = { super_admin: '超级管理员', org_admin: '机构管理员', teacher: '教师' }
 const roleLabel = computed(() => roleMap[auth.userRole] || auth.userRole)
 
 async function handleLogout() {
@@ -70,6 +80,32 @@ async function handleLogout() {
   localStorage.removeItem('login_mode')
   router.push('/login')
 }
+
+async function loadPendingPasswordCount() {
+  try {
+    const { data } = await api.get('/api/cloud/password-requests', {
+      params: { page: 1, page_size: 1, status: 'pending' },
+    })
+    pendingPasswordCount.value = data.total || 0
+  } catch {
+    pendingPasswordCount.value = 0
+  }
+}
+
+onMounted(() => {
+  loadPendingPasswordCount()
+  pendingTimer = window.setInterval(loadPendingPasswordCount, 30000)
+})
+
+onBeforeUnmount(() => {
+  if (pendingTimer) window.clearInterval(pendingTimer)
+})
+
+watch(() => route.path, () => {
+  if (route.path === '/password-requests' || route.path === '/dashboard') {
+    loadPendingPasswordCount()
+  }
+})
 </script>
 
 <style scoped>
@@ -102,6 +138,15 @@ async function handleLogout() {
 }
 .sidebar :deep(.el-menu-item.is-active) {
   background: rgba(44,90,160,0.5) !important;
+}
+.menu-with-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+.menu-badge :deep(.el-badge__content) {
+  border: none;
+  font-size: 11px;
 }
 .main-content {
   flex: 1; overflow-y: auto; padding: 24px;

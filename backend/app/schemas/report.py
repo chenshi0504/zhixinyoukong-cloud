@@ -8,6 +8,9 @@ class ReportRead(BaseModel):
     student_id: int | None
     original_filename: str | None
     file_size: int | None
+    file_type: str | None
+    description: str | None
+    is_independent: bool
     score: int | None
     feedback: str | None
     grader_id: int | None
@@ -15,8 +18,19 @@ class ReportRead(BaseModel):
     submitted_at: datetime
     graded_at: datetime | None
     updated_at: datetime
+    task_title: str | None = None
+    student_name: str | None = None
 
     model_config = ConfigDict(from_attributes=True)
+
+    @classmethod
+    def model_validate(cls, obj, *args, **kwargs):
+        model = super().model_validate(obj, *args, **kwargs)
+        if getattr(obj, "task", None):
+            model.task_title = obj.task.title
+        if getattr(obj, "student", None):
+            model.student_name = obj.student.real_name or obj.student.username
+        return model
 
 
 class GradeRequest(BaseModel):

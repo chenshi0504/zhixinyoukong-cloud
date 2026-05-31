@@ -13,7 +13,7 @@
       <el-table-column prop="id" label="ID" width="60" />
       <el-table-column prop="name" label="班级名称" />
       <el-table-column prop="description" label="描述" show-overflow-tooltip />
-      <el-table-column label="学生人数" width="100">
+      <el-table-column label="成员数" width="100">
         <template #default="{ row }">{{ row._studentCount ?? '-' }}</template>
       </el-table-column>
       <el-table-column prop="created_at" label="创建时间" width="180">
@@ -22,7 +22,7 @@
       <el-table-column label="操作" width="320">
         <template #default="{ row }">
           <el-button size="small" type="primary" @click="viewOverview(row)">查看概况</el-button>
-          <el-button size="small" @click="viewDetail(row)">管理学生</el-button>
+          <el-button size="small" @click="viewDetail(row)">管理成员</el-button>
           <el-button size="small" type="warning" @click="openEdit(row)">编辑</el-button>
           <el-button size="small" type="danger" @click="deleteClass(row)">删除</el-button>
         </template>
@@ -55,7 +55,7 @@
           <el-card shadow="hover">
             <div style="text-align:center">
               <div style="font-size:28px;color:#409eff;font-weight:600">{{ overviewStats.studentCount }}</div>
-              <div style="color:#909399;margin-top:6px;font-size:13px">学生人数</div>
+              <div style="color:#909399;margin-top:6px;font-size:13px">成员数</div>
             </div>
           </el-card>
         </el-col>
@@ -84,7 +84,7 @@
           </el-card>
         </el-col>
       </el-row>
-      <h4 style="margin:0 0 12px 0">学生列表</h4>
+      <h4 style="margin:0 0 12px 0">成员列表</h4>
       <el-table :data="overviewStudents" v-loading="loadingOverview" stripe size="small" max-height="300">
         <el-table-column prop="username" label="用户名" />
         <el-table-column prop="real_name" label="姓名" />
@@ -98,13 +98,13 @@
       </el-table>
     </el-dialog>
 
-    <!-- 班级学生管理对话框 -->
-    <el-dialog v-model="showStudents" :title="'班级学生 — ' + (currentClass?.name || '')" width="700px">
+    <!-- 班级成员管理对话框 -->
+    <el-dialog v-model="showStudents" :title="'班级成员 — ' + (currentClass?.name || '')" width="700px">
       <div style="margin-bottom:12px;display:flex;gap:8px">
         <el-select
           v-model="selectedStudentIds"
           multiple filterable
-          placeholder="搜索并选择要添加的学生"
+          placeholder="搜索并选择要添加的成员"
           style="flex:1"
         >
           <el-option
@@ -195,7 +195,7 @@ async function viewOverview(row) {
   } finally { loadingOverview.value = false }
 }
 
-// 学生管理
+// 成员管理
 const showStudents = ref(false)
 const currentClass = ref(null)
 const classStudents = ref([])
@@ -211,7 +211,7 @@ async function fetchClasses() {
   try {
     const { data } = await api.get('/api/cloud/classes', { params: { page_size: 50 } })
     const items = data.items || data
-    // 获取每个班级的学生数
+    // 获取每个班级的成员数
     for (const cls of items) {
       try {
         const { data: detail } = await api.get(`/api/cloud/classes/${cls.id}`)
@@ -303,7 +303,7 @@ async function fetchClassStudents(classId) {
 
 async function fetchAllStudents() {
   try {
-    // 分页拉取所有学生（API 上限 page_size=50）
+    // 分页拉取所有成员（API 上限 page_size=50）
     let all = [], page = 1
     while (true) {
       const { data } = await api.get('/api/cloud/users', { params: { role: 'student', scope: 'org', page, page_size: 50 } })
@@ -328,7 +328,7 @@ async function addStudents() {
     await api.post(`/api/cloud/classes/${currentClass.value.id}/students`, {
       student_ids: selectedStudentIds.value,
     })
-    ElMessage.success('学生已添加')
+    ElMessage.success('成员已添加')
     selectedStudentIds.value = []
     await fetchClassStudents(currentClass.value.id)
     fetchClasses()
@@ -338,7 +338,7 @@ async function addStudents() {
 }
 
 async function removeStudent(studentId) {
-  await ElMessageBox.confirm('确定从班级中移除该学生？', '确认', { type: 'warning' })
+  await ElMessageBox.confirm('确定从班级中移除该成员？', '确认', { type: 'warning' })
   try {
     await api.delete(`/api/cloud/classes/${currentClass.value.id}/students`, {
       data: { student_ids: [studentId] },

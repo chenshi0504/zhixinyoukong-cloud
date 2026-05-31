@@ -43,7 +43,7 @@ class LoginResponse(BaseModel):
 
 class TeacherRegisterRequest(BaseModel):
     real_name: str
-    org_name: str
+    org_id: int
     password: str
 
 
@@ -57,6 +57,7 @@ class TeacherRegisterResponse(BaseModel):
 class PasswordChangeRequest(BaseModel):
     old_password: str
     new_password: str
+    reason: str | None = None
 
 
 class PasswordResetRequest(BaseModel):
@@ -70,3 +71,19 @@ class TokenRefreshRequest(BaseModel):
 class TokenRefreshResponse(BaseModel):
     access_token: str
     token_type: str = "bearer"
+
+
+class StudentRegisterRequest(BaseModel):
+    org_id: int
+    class_id: int
+    real_name: str
+    password: str
+
+
+class StudentRegisterResponse(BaseModel):
+    username: str
+    real_name: str
+    role: str
+    class_name: str | None = None
+    student_id: str | None = None
+    message: str = "注册成功"

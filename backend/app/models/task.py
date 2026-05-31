@@ -23,3 +23,13 @@ class Task(Base):
     teacher: Mapped["User"] = relationship("User", back_populates="tasks", foreign_keys=[teacher_id])
     assigned_class: Mapped["Class"] = relationship("Class", back_populates="tasks")
     reports: Mapped[list["Report"]] = relationship("Report", back_populates="task")
+
+    @property
+    def class_name(self) -> str | None:
+        return self.assigned_class.name if self.assigned_class else None
+
+    @property
+    def teacher_name(self) -> str | None:
+        if not self.teacher:
+            return None
+        return self.teacher.real_name or self.teacher.username

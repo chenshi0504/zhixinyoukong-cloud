@@ -38,10 +38,10 @@ echo.
 echo [3/4] 启动后端 API 服务...
 if "%MODE%"=="2" (
     echo   HTTPS 模式: https://localhost:9000
-    start "云端后端API" /D "%CLOUD_BACKEND%" %PYTHON_CMD% -m uvicorn app.main:app --host 0.0.0.0 --port 9000 --ssl-keyfile key.pem --ssl-certfile cert.pem
+    start "云端后端API" /B /D "%CLOUD_BACKEND%" %PYTHON_CMD% -m uvicorn app.main:app --host 0.0.0.0 --port 9000 --ssl-keyfile key.pem --ssl-certfile cert.pem
 ) else (
     echo   HTTP 模式: http://localhost:9000
-    start "云端后端API" /D "%CLOUD_BACKEND%" %PYTHON_CMD% -m uvicorn app.main:app --host 0.0.0.0 --port 9000
+    start "云端后端API" /B /D "%CLOUD_BACKEND%" %PYTHON_CMD% -m uvicorn app.main:app --host 0.0.0.0 --port 9000
 )
 
 :: 等待后端启动
@@ -59,7 +59,7 @@ if /i "%TUNNEL%"=="y" (
         echo   下载地址: https://www.cpolar.com/
     ) else (
         echo   正在启动 cpolar 穿透 9000 端口...
-        start "cpolar隧道" cpolar http 9000
+        start "cpolar隧道" /B cpolar http 9000
         echo   请在 cpolar 窗口中查看公网地址
         echo   ⚠️ 请将公网地址更新到:
         echo      1. cloud/frontend/.env.production 的 VITE_API_BASE_URL

@@ -16,6 +16,7 @@ class TaskUpdate(BaseModel):
     title: str | None = None
     description: str | None = None
     module_id: str | None = None
+    class_id: int | None = None
     deadline: datetime | None = None
     max_score: int | None = None
 
@@ -33,5 +34,7 @@ class TaskRead(BaseModel):
     status: str
     created_at: datetime
     updated_at: datetime
+    class_name: str | None = None
+    teacher_name: str | None = None
 
     model_config = ConfigDict(from_attributes=True)

@@ -1,6 +1,6 @@
 import os
 from contextlib import asynccontextmanager
-from fastapi import FastAPI
+from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy import text
 
@@ -34,6 +34,12 @@ def _ensure_sqlite_columns() -> None:
         },
         "tasks": {
             "class_id": "INTEGER",
+        },
+        "self_algorithm_submissions": {
+            "task_id": "INTEGER",
+            "process_file_path": "VARCHAR(500)",
+            "process_original_filename": "VARCHAR(255)",
+            "process_file_size": "BIGINT",
         },
         "messages": {},
         "message_reads": {},
@@ -227,6 +233,8 @@ if os.path.isdir(_frontend_dist):
 
     @app.get("/{full_path:path}")
     async def serve_spa(full_path: str):
+        if full_path.startswith("api/"):
+            raise HTTPException(status_code=404, detail="API endpoint not found")
         file_path = os.path.join(_frontend_dist, full_path)
         if os.path.isfile(file_path):
             return FileResponse(file_path)

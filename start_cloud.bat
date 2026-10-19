@@ -67,13 +67,13 @@ timeout /t 3 /nobreak >nul
 :: ---------- 访问说明 ----------
 echo.
 echo [5/5] 云端平台由 %CLOUD_PORT% 端口统一提供前端页面和后端 API
-start http://localhost:%CLOUD_PORT%
+start http://localhost:%CLOUD_PORT%/#/login
 
 echo.
 echo ========================================
 echo   启动完成！
 echo ========================================
-echo   云端页面:  http://localhost:%CLOUD_PORT%
+echo   云端页面:  http://localhost:%CLOUD_PORT%/#/login
 echo   后端 API:  http://localhost:%CLOUD_PORT%/api/cloud/health
 echo   API 文档:  http://localhost:%CLOUD_PORT%/docs
 echo ========================================

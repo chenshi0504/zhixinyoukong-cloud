@@ -12,6 +12,9 @@
         <el-select v-model="filterType" clearable placeholder="按算法类型筛选" style="width:220px" @change="fetchSubmissions">
           <el-option v-for="p in packs" :key="p.algorithm_type" :label="p.label" :value="p.algorithm_type" />
         </el-select>
+        <el-select v-model="filterTaskId" clearable placeholder="按任务筛选" style="width:220px" @change="fetchSubmissions">
+          <el-option v-for="t in tasks" :key="t.id" :label="t.title" :value="t.id" />
+        </el-select>
         <el-button circle plain :loading="loading" title="刷新提交记录" @click="refreshAll">
           <el-icon><Refresh /></el-icon>
         </el-button>
@@ -22,7 +25,7 @@
       type="info"
       :closable="false"
       show-icon
-      title="这里展示学生按代码、方案说明、仿真结果三类文件提交的自研算法记录，教师可下载文件并查看平台自动生成的 baseline 对比分析。"
+      title="这里展示学生按代码、方案说明、仿真过程、仿真结果四类文件提交的自研算法记录，教师可下载文件并查看平台自动生成的 baseline 对比分析。"
       style="margin-bottom:16px"
     />
 
@@ -30,6 +33,9 @@
       <el-table-column prop="id" label="ID" width="70" />
       <el-table-column label="算法类型" min-width="160">
         <template #default="{ row }">{{ labelOf(row.algorithm_type) }}</template>
+      </el-table-column>
+      <el-table-column label="关联任务" min-width="190">
+        <template #default="{ row }">{{ row.task_title || (row.task_id ? ('任务#' + row.task_id) : '未关联任务') }}</template>
       </el-table-column>
       <el-table-column label="班级" min-width="130">
         <template #default="{ row }">{{ row.class_name || ('班级#' + row.class_id) }}</template>
@@ -41,6 +47,7 @@
         <template #default="{ row }">
           <div class="file-line">代码：{{ row.code_original_filename || '-' }}</div>
           <div class="file-line">方案：{{ row.spec_original_filename || '-' }}</div>
+          <div class="file-line">过程：{{ row.process_original_filename || '-' }}</div>
           <div class="file-line">结果：{{ row.result_original_filename || '-' }}</div>
         </template>
       </el-table-column>
@@ -61,6 +68,7 @@
               <el-dropdown-menu>
                 <el-dropdown-item command="code">代码</el-dropdown-item>
                 <el-dropdown-item command="spec">方案说明</el-dropdown-item>
+                <el-dropdown-item command="process" :disabled="!row.process_original_filename">仿真过程</el-dropdown-item>
                 <el-dropdown-item command="result">仿真结果</el-dropdown-item>
               </el-dropdown-menu>
             </template>
@@ -105,11 +113,13 @@ import { ElMessage } from 'element-plus'
 const packs = ref([])
 const classes = ref([])
 const students = ref([])
+const tasks = ref([])
 const submissions = ref([])
 const loading = ref(false)
 const filterClassId = ref(null)
 const filterStudentId = ref(null)
 const filterType = ref(null)
+const filterTaskId = ref(null)
 const showAnalysis = ref(false)
 const currentRow = ref(null)
 
@@ -125,6 +135,11 @@ async function fetchPacks() {
 async function fetchClasses() {
   const { data } = await api.get('/api/cloud/classes', { params: { page_size: 50 } })
   classes.value = data.items || data || []
+}
+
+async function fetchTasks() {
+  const { data } = await api.get('/api/cloud/tasks', { params: { page_size: 100, status: 'published' } })
+  tasks.value = data.items || data || []
 }
 
 async function fetchStudents() {
@@ -144,6 +159,7 @@ async function fetchSubmissions() {
     if (filterType.value) params.algorithm_type = filterType.value
     if (filterClassId.value) params.class_id = filterClassId.value
     if (filterStudentId.value) params.student_id = filterStudentId.value
+    if (filterTaskId.value) params.task_id = filterTaskId.value
     const { data } = await api.get('/api/cloud/self-algorithms/submissions', { params })
     submissions.value = data.items || []
   } catch (e) {
@@ -162,6 +178,7 @@ async function handleClassChange() {
 async function refreshAll() {
   try {
     await Promise.all([fetchPacks(), fetchClasses()])
+    await fetchTasks()
     if (filterClassId.value) await fetchStudents()
     await fetchSubmissions()
     ElMessage.success('已刷新自研算法提交记录')
@@ -181,6 +198,7 @@ async function downloadFile(row, kind) {
     const names = {
       code: row.code_original_filename || 'algorithm.py',
       spec: row.spec_original_filename || '方案说明',
+      process: row.process_original_filename || '仿真过程',
       result: row.result_original_filename || 'result',
     }
     const url = window.URL.createObjectURL(new Blob([response.data]))

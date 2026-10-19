@@ -45,6 +45,9 @@ const router = createRouter({
 })
 
 router.beforeEach((to) => {
+  if (to.path === '/') {
+    return { name: 'Login' }
+  }
   const token = localStorage.getItem('access_token')
   if (!to.meta.public && !token) {
     return { name: 'Login' }

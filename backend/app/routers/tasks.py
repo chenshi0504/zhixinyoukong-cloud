@@ -67,6 +67,16 @@ def create_task(
             raise HTTPException(status_code=403, detail="只能给自己管理的班级下发任务")
         if current_user.role == "org_admin" and cls.org_id != current_user.org_id:
             raise HTTPException(status_code=403, detail="只能给本机构班级下发任务")
+    elif current_user.role == "teacher":
+        cls = (
+            db.query(Class)
+            .filter(Class.teacher_id == current_user.id)
+            .order_by(Class.id.asc())
+            .first()
+        )
+        if cls is None:
+            raise HTTPException(status_code=400, detail="当前教师尚未管理班级，无法下发任务")
+        body.class_id = cls.id
 
     task = Task(
         title=body.title,

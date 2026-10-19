@@ -22,6 +22,8 @@ class UserRead(BaseModel):
     role: str
     real_name: str | None
     org_id: int | None
+    org_name: str | None = None
+    class_name: str | None = None
     is_active: bool
     created_at: datetime
     updated_at: datetime

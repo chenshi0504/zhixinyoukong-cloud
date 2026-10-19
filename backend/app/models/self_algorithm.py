@@ -17,6 +17,7 @@ class SelfAlgorithmSubmission(Base):
 
     org_id: Mapped[int | None] = mapped_column(Integer, ForeignKey("organizations.id"), index=True)
     class_id: Mapped[int | None] = mapped_column(Integer, ForeignKey("classes.id"), index=True)
+    task_id: Mapped[int | None] = mapped_column(Integer, ForeignKey("tasks.id"), index=True)
     student_id: Mapped[int] = mapped_column(Integer, ForeignKey("users.id"), nullable=False, index=True)
 
     code_file_path: Mapped[str | None] = mapped_column(String(500))
@@ -26,6 +27,10 @@ class SelfAlgorithmSubmission(Base):
     spec_file_path: Mapped[str | None] = mapped_column(String(500))
     spec_original_filename: Mapped[str | None] = mapped_column(String(255))
     spec_file_size: Mapped[int | None] = mapped_column(BigInteger)
+
+    process_file_path: Mapped[str | None] = mapped_column(String(500))
+    process_original_filename: Mapped[str | None] = mapped_column(String(255))
+    process_file_size: Mapped[int | None] = mapped_column(BigInteger)
 
     result_file_path: Mapped[str | None] = mapped_column(String(500))
     result_original_filename: Mapped[str | None] = mapped_column(String(255))
@@ -41,6 +46,7 @@ class SelfAlgorithmSubmission(Base):
 
     organization: Mapped["Organization"] = relationship("Organization")
     classroom: Mapped["Class"] = relationship("Class")
+    task: Mapped["Task"] = relationship("Task")
     student: Mapped["User"] = relationship("User")
 
     @property
@@ -56,6 +62,10 @@ class SelfAlgorithmSubmission(Base):
         if not self.student:
             return None
         return self.student.real_name or self.student.username
+
+    @property
+    def task_title(self) -> str | None:
+        return self.task.title if self.task else None
 
     @property
     def analysis(self) -> dict | None:

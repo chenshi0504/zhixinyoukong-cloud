@@ -24,6 +24,18 @@ class User(Base):
     reports_submitted: Mapped[list["Report"]] = relationship("Report", back_populates="student", foreign_keys="Report.student_id")
     reports_graded: Mapped[list["Report"]] = relationship("Report", back_populates="grader", foreign_keys="Report.grader_id")
 
+    @property
+    def org_name(self) -> str | None:
+        return self.organization.name if self.organization else None
+
+    @property
+    def class_name(self) -> str | None:
+        if self.enrolled_classes:
+            return self.enrolled_classes[0].name
+        if self.managed_classes:
+            return self.managed_classes[0].name
+        return None
+
 
 class RefreshToken(Base):
     __tablename__ = "refresh_tokens"

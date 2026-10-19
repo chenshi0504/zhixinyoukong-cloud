@@ -27,6 +27,7 @@ from ..database import get_db
 from ..deps import get_current_user, require_role
 from ..models.classroom import Class, student_classes
 from ..models.self_algorithm import SelfAlgorithmSubmission
+from ..models.task import Task
 from ..models.user import User
 from ..schemas.common import PagedResponse
 from ..schemas.self_algorithm import SelfAlgorithmPack, SelfAlgorithmSubmissionRead
@@ -78,6 +79,7 @@ _ALGORITHM_PACKS = {
 
 _CODE_EXTS = {".py"}
 _SPEC_EXTS = {".md", ".txt", ".docx"}
+_PROCESS_EXTS = {".zip", ".sumocfg", ".xml", ".csv", ".json", ".log", ".txt"}
 _RESULT_EXTS = {".xlsx", ".xls", ".csv", ".json", ".xml", ".docx", ".txt"}
 _MAX_FILE_SIZE = 80 * 1024 * 1024
 
@@ -156,6 +158,28 @@ def _get_student_class_id(db: Session, current_user: User, class_id: int | None)
     if not class_ids:
         raise HTTPException(status_code=400, detail="当前账号尚未加入班级，无法提交自研算法")
     return int(class_ids[0])
+
+
+def _validate_student_task(
+    db: Session,
+    *,
+    current_user: User,
+    task_id: int | None,
+    algorithm_type: str,
+    class_id: int,
+) -> Task | None:
+    if task_id is None:
+        return None
+    task = db.query(Task).filter(Task.id == task_id).first()
+    if task is None:
+        raise HTTPException(status_code=404, detail="任务不存在")
+    if task.status != "published":
+        raise HTTPException(status_code=403, detail="任务尚未发布")
+    if task.class_id != class_id:
+        raise HTTPException(status_code=403, detail="该任务不属于当前学生班级")
+    if task.module_id and task.module_id != algorithm_type:
+        raise HTTPException(status_code=400, detail="提交的算法类型与任务要求不一致")
+    return task
 
 
 def _save_file(folder: Path, filename: str, content: bytes) -> str:
@@ -440,7 +464,7 @@ def _analysis_from_suite_evaluation(
         advice.append("优先检查弱势指标对应的约束、目标函数权重和数据样本覆盖情况。")
     if comparison_metrics:
         advice.append("本次评测已生成任务专用 comparison 指标，教师可在详情中查看完整 JSON。")
-    advice.append("代码、方案说明和结果文件均已归档，教师端可按班级和学生下载复核。")
+    advice.append("代码、方案说明、仿真过程和结果文件均已归档，教师端可按班级和学生下载复核。")
 
     text_parts = [summary]
     if advantages:
@@ -482,10 +506,10 @@ def _call_ai_analysis(
 ) -> str | None:
     settings = get_settings()
     api_url = (settings.self_algorithm_ai_api_url or "").strip()
-    api_key = (settings.self_algorithm_ai_api_key or os.environ.get("OPENAI_API_KEY", "")).strip()
-    if not api_url and api_key:
-        api_url = "https://api.openai.com/v1/chat/completions"
+    api_key = (settings.self_algorithm_ai_api_key or os.environ.get("DEEPSEEK_API_KEY", "")).strip()
     if not api_url:
+        api_url = "https://api.deepseek.com/v1/chat/completions"
+    if not api_key:
         return None
 
     pack = _ALGORITHM_PACKS.get(algorithm_type, {})
@@ -519,7 +543,8 @@ def _call_ai_analysis(
             {"role": "system", "content": system_prompt},
             {"role": "user", "content": user_prompt},
         ],
-        "temperature": 0.2,
+        "thinking": {"type": "enabled"},
+        "reasoning_effort": settings.self_algorithm_ai_reasoning_effort,
     }
     try:
         with httpx.Client(timeout=settings.self_algorithm_ai_timeout_seconds) as client:
@@ -631,7 +656,7 @@ def _build_analysis(algorithm_type: str, result_path: Path) -> dict[str, Any]:
         advice.append("结果文件建议至少包含模板中的关键字段，并保留表头或 JSON 键名。")
     if suite_error:
         advice.append("可直接复用下载包中的 student_submission_template 文件头重新导出结果。")
-    advice.append("教师端可按机构-班级-学生查看本次提交，代码、方案说明和结果文件均已归档。")
+    advice.append("教师端可按机构-班级-学生查看本次提交，代码、方案说明、仿真过程和结果文件均已归档。")
 
     text_parts = [summary]
     if advantages:
@@ -707,8 +732,10 @@ def download_pack(
 def submit_self_algorithm(
     algorithm_type: str = Form(...),
     class_id: int | None = Form(None),
+    task_id: int | None = Form(None),
     code_file: UploadFile = File(...),
     spec_file: UploadFile = File(...),
+    process_file: UploadFile = File(...),
     result_file: UploadFile = File(...),
     db: Session = Depends(get_db),
     current_user: User = Depends(require_role("student")),
@@ -716,9 +743,17 @@ def submit_self_algorithm(
     _require_pack(algorithm_type)
     code_name, code_content = _validate_upload(code_file, _CODE_EXTS, "代码")
     spec_name, spec_content = _validate_upload(spec_file, _SPEC_EXTS, "方案说明")
+    process_name, process_content = _validate_upload(process_file, _PROCESS_EXTS, "仿真过程")
     result_name, result_content = _validate_upload(result_file, _RESULT_EXTS, "仿真结果")
 
     target_class_id = _get_student_class_id(db, current_user, class_id)
+    task = _validate_student_task(
+        db,
+        current_user=current_user,
+        task_id=task_id,
+        algorithm_type=algorithm_type,
+        class_id=target_class_id,
+    )
     cls = db.query(Class).filter(Class.id == target_class_id).first()
     if cls is None:
         raise HTTPException(status_code=404, detail="班级不存在")
@@ -735,7 +770,8 @@ def submit_self_algorithm(
     )
     code_path = _save_file(folder, "01_code_" + code_name, code_content)
     spec_path = _save_file(folder, "02_spec_" + spec_name, spec_content)
-    result_path = _save_file(folder, "03_result_" + result_name, result_content)
+    process_path = _save_file(folder, "03_process_" + process_name, process_content)
+    result_path = _save_file(folder, "04_result_" + result_name, result_content)
 
     analysis = _build_analysis(algorithm_type, Path(result_path))
     analysis_text = analysis.pop("analysis_text")
@@ -745,6 +781,7 @@ def submit_self_algorithm(
         algorithm_type=algorithm_type,
         org_id=org_id,
         class_id=target_class_id,
+        task_id=task.id if task else None,
         student_id=current_user.id,
         code_file_path=code_path,
         code_original_filename=code_name,
@@ -752,6 +789,9 @@ def submit_self_algorithm(
         spec_file_path=spec_path,
         spec_original_filename=spec_name,
         spec_file_size=len(spec_content),
+        process_file_path=process_path,
+        process_original_filename=process_name,
+        process_file_size=len(process_content),
         result_file_path=result_path,
         result_original_filename=result_name,
         result_file_size=len(result_content),
@@ -772,6 +812,7 @@ def list_submissions(
     page_size: int = Query(20, ge=1, le=100),
     algorithm_type: str | None = Query(None),
     class_id: int | None = Query(None),
+    task_id: int | None = Query(None),
     student_id: int | None = Query(None),
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
@@ -781,6 +822,8 @@ def list_submissions(
         q = q.filter(SelfAlgorithmSubmission.algorithm_type == algorithm_type)
     if class_id and current_user.role != "student":
         q = q.filter(SelfAlgorithmSubmission.class_id == class_id)
+    if task_id:
+        q = q.filter(SelfAlgorithmSubmission.task_id == task_id)
     if student_id and current_user.role != "student":
         q = q.filter(SelfAlgorithmSubmission.student_id == student_id)
     total = q.count()
@@ -800,10 +843,11 @@ def download_submission_file(
     mapping = {
         "code": (submission.code_file_path, submission.code_original_filename),
         "spec": (submission.spec_file_path, submission.spec_original_filename),
+        "process": (submission.process_file_path, submission.process_original_filename),
         "result": (submission.result_file_path, submission.result_original_filename),
     }
     if kind not in mapping:
-        raise HTTPException(status_code=400, detail="下载类型必须是 code/spec/result")
+        raise HTTPException(status_code=400, detail="下载类型必须是 code/spec/process/result")
     file_path, filename = mapping[kind]
     if not file_path or not os.path.exists(file_path):
         raise HTTPException(status_code=404, detail="文件不存在")
